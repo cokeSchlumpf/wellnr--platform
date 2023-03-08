@@ -32,7 +32,25 @@ public sealed abstract class Either<L, R> permits Left, Right {
 
     public abstract Optional<L> getLeft();
 
+    public L getLeftForce() {
+        var l = this.getLeft();
+        if (l.isPresent()) {
+            return l.get();
+        } else {
+            throw new IllegalStateException("Left is not defined. Check with `isLeft` before calling this method.");
+        }
+    }
+
     public abstract Optional<R> getRight();
+
+    public R getRightForce() {
+        var r = this.getRight();
+        if (r.isPresent()) {
+            return r.get();
+        } else {
+            throw new IllegalStateException("Right is not defined. Check with `isRight` before calling this method.");
+        }
+    }
 
     public abstract <T> T map(Function1<L, T> mapLeft, Function1<R, T> mapRight);
 

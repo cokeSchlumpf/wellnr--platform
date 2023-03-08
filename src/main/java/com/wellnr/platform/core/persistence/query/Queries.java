@@ -32,8 +32,12 @@ public class Queries {
         return And.apply(Arrays.stream(query).toList());
     }
 
-    public static ElemMatch match(Value selector, Filter query) {
+    public static ElemMatch elemMatch(Value selector, Filter query) {
         return ElemMatch.apply(selector, query);
+    }
+
+    public static Match match(Value selector, Filter query) {
+        return Match.apply(selector, query);
     }
 
     public static Equals eq(Value value) {

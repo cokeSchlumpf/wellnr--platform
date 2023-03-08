@@ -29,6 +29,10 @@ public class Field implements Value {
         return elements.get(0);
     }
 
+    public String getFQN() {
+        return String.join(".", elements);
+    }
+
     public Optional<Field> getChildField() {
         if (elements.size() <= 1) {
             return Optional.empty();

@@ -14,7 +14,7 @@ class QueriesTest {
 
     @Test
     void fromMethodWithSingleAttribute() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByName", String.class);
+        var method = TestRepo.class.getMethod("findAllStringByName", String.class);
         var query = Queries.fromMethod(method);
 
         assertEquals(match($("Name"), eq(p(0))), query);
@@ -22,7 +22,7 @@ class QueriesTest {
 
     @Test
     void fromMethodWithAnd() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByNameAndAge", String.class, int.class);
+        var method = TestRepo.class.getMethod("findAllStringByNameAndAge", String.class, int.class);
         var query = Queries.fromMethod(method);
 
         var expected = and(
@@ -34,7 +34,7 @@ class QueriesTest {
 
     @Test
     void fromMethodWithAOr() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByNameOrAge", String.class, int.class);
+        var method = TestRepo.class.getMethod("findAllStringByNameOrAge", String.class, int.class);
         var query = Queries.fromMethod(method);
 
         var expected = or(
@@ -46,7 +46,7 @@ class QueriesTest {
 
     @Test
     void fromMethodWithAndAndOr() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByNameOrAgeAndCity", String.class, int.class, String.class);
+        var method = TestRepo.class.getMethod("findAllStringByNameOrAgeAndCity", String.class, int.class, String.class);
         var query = Queries.fromMethod(method);
 
         var expected = and(
@@ -62,16 +62,16 @@ class QueriesTest {
 
     @Test
     void fromMethodWithCustomQuery() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByCustomQuery");
+        var method = TestRepo.class.getMethod("findAllStringByCustomQuery");
         var query = Queries.fromMethod(method);
 
-        var expected = TestRepoCustomQueries.findStringByCustomQuery();
+        var expected = TestRepoCustomQueries.findAllStringByCustomQuery();
         assertEquals(expected, query);
     }
 
     @Test
     void fromMethodWithPathAnnotationWithCustomName() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByCustomQueryWithOtherName");
+        var method = TestRepo.class.getMethod("findAllStringByCustomQueryWithOtherName");
         var query = Queries.fromMethod(method);
 
         var expected = TestRepoCustomQueries.customName();
@@ -80,7 +80,7 @@ class QueriesTest {
 
     @Test
     void fromMethodWithPathAnnotation() throws NoSuchMethodException {
-        var method = TestRepo.class.getMethod("findStringByAnnotatedName", String.class);
+        var method = TestRepo.class.getMethod("findAllStringByAnnotatedName", String.class);
         var query = Queries.fromMethod(method);
 
         assertEquals(match($("properties.name"), eq(p(0))), query);
@@ -88,28 +88,28 @@ class QueriesTest {
 
     public interface TestRepo {
 
-        List<String> findStringByName(String name);
+        List<String> findAllStringByName(String name);
 
-        List<String> findStringByNameAndAge(String name, int age);
+        List<String> findAllStringByNameAndAge(String name, int age);
 
-        List<String> findStringByNameOrAge(String name, int age);
+        List<String> findAllStringByNameOrAge(String name, int age);
 
-        List<String> findStringByNameOrAgeAndCity(String name, int age, String city);
+        List<String> findAllStringByNameOrAgeAndCity(String name, int age, String city);
 
-        List<String> findStringByAnnotatedName(
+        List<String> findAllStringByAnnotatedName(
             @Path("properties.name") String name);
 
         @CustomQuery(TestRepoCustomQueries.class)
-        List<String> findStringByCustomQuery();
+        List<String> findAllStringByCustomQuery();
 
         @CustomQuery(value = TestRepoCustomQueries.class, methodName = "customName")
-        List<String> findStringByCustomQueryWithOtherName();
+        List<String> findAllStringByCustomQueryWithOtherName();
 
     }
 
     public static class TestRepoCustomQueries {
 
-        public static Query findStringByCustomQuery() {
+        public static Query findAllStringByCustomQuery() {
             return eq(v("custom"));
         }
 

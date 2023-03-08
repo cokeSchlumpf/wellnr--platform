@@ -1,8 +1,10 @@
 package com.wellnr.platform.core.persistence.query.filter;
 
-import com.wellnr.platform.core.persistence.inmemory.QueryEngine;
+import com.wellnr.platform.core.persistence.inmemory.InMemoryQueryEngine;
+import com.wellnr.platform.core.persistence.query.QueryEngine;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -12,11 +14,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryTest {
 
+    private QueryEngine<Car> engine;
+
+    @BeforeEach
+    public void setup() {
+        this.engine = InMemoryQueryEngine.apply(Car.class, this.getSamples());
+    }
+
     @Test
     public void testFindNestedFieldMatch() {
         var query = match(uppercase($("engine.type")), eq(uppercase(v("electric"))));
-        var engine = QueryEngine.apply(Car.class, getSamples(), query, List.of());
-        var result = engine.findAll();
+        var result = engine.findAll(query);
 
         assertEquals(1, result.size());
         assertEquals("Tesla", result.get(0).getBrand());
@@ -28,21 +36,18 @@ class QueryTest {
             match(uppercase($("brand")), eq(uppercase(v("audi")))),
             match($("color"), eq(v("black")))
         );
-        var engine = QueryEngine.apply(Car.class, getSamples(), query, List.of());
-        var result = engine.findAll();
+        var result = engine.findAll(query);
 
         assertEquals(2, result.size());
     }
 
     @Test
     public void testFindMatchesInChildCollections() {
-        var query = match(
+        var query = elemMatch(
             $("drivers"),
             match($("name"), eq(v("michael"))));
 
-
-        var engine = QueryEngine.apply(Car.class, getSamples(), query, List.of());
-        var result = engine.findAll();
+        var result = engine.findAll(query);
 
         assertEquals(1, result.size());
         assertEquals("BMW", result.get(0).getBrand());
@@ -50,13 +55,11 @@ class QueryTest {
 
     @Test
     public void testFindMatchesWithInt() {
-        var query = match(
+        var query = elemMatch(
             $("drivers"),
             match($("age"), eq(v(29))));
 
-
-        var engine = QueryEngine.apply(Car.class, getSamples(), query, List.of());
-        var result = engine.findAll();
+        var result = engine.findAll(query);
 
         assertEquals(1, result.size());
         assertEquals("BMW", result.get(0).getBrand());
@@ -71,8 +74,7 @@ class QueryTest {
             eq($("brand", p(0)))
         );
 
-        var engine = QueryEngine.apply(Car.class, getSamples(), query, List.of(parameter));
-        var result = engine.findAll();
+        var result = engine.findAll(query, List.of(parameter));
 
         assertEquals(1, result.size());
         assertEquals("BMW", result.get(0).getBrand());
