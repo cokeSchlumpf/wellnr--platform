@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface QueryEngine<T> {
+
     /**
      * Inserts or updates an instance.
      *
@@ -86,4 +87,5 @@ public interface QueryEngine<T> {
     default void remove(Query query) {
         remove(query, List.of());
     }
+
 }

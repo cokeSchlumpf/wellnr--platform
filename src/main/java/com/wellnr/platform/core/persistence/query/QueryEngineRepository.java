@@ -53,6 +53,8 @@ public final class QueryEngineRepository {
             (proxy, method, args) -> {
                 if (methods.containsKey(method.getName())) {
                     return methods.get(method.getName()).invoke(proxy, method, args);
+                } else if (method.isDefault()) {
+                    return InvocationHandler.invokeDefault(proxy, method, args);
                 } else {
                     throw new NotImplementedException(MessageFormat.format(
                         "The method `{0}` of `{1}` is not implemented automatically.",

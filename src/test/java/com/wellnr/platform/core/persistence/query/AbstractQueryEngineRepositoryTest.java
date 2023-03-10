@@ -41,6 +41,9 @@ public abstract class AbstractQueryEngineRepositoryTest {
         repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "tesla"), "Tesla", "silver", Engine.apply(110, "electric"), List.of()));
         result = repo.findAllCars();
         assertEquals(2, result.size());
+
+        var singleResultGet = repo.getCarByGUID(GUID.apply("cars", "tesla"));
+        assertEquals(singleResultGet.getBrand(), "Tesla");
     }
 
 }

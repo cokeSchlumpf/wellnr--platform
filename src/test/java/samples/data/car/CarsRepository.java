@@ -9,6 +9,10 @@ public interface CarsRepository {
 
     Optional<Car> findOneCarByGUID(GUID guid);
 
+    default Car getCarByGUID(GUID guid) {
+        return findOneCarByGUID(guid).orElseThrow();
+    }
+
     List<Car> findAllCars();
 
     List<Car> findAllCarsByBrand(String brand);
