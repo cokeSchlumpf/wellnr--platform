@@ -23,10 +23,7 @@ import org.bson.conversions.Bson;
 import org.mongojack.JacksonMongoCollection;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
 import static com.mongodb.client.model.Filters.*;
@@ -46,6 +43,23 @@ import static com.mongodb.client.model.Filters.*;
  */
 @AllArgsConstructor(staticName = "apply")
 public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T> {
+
+    private static Set<Class<?>> WRAPPER_TYPES;
+
+    static {
+        Set<Class<?>> ret = new HashSet<Class<?>>();
+        ret.add(Boolean.class);
+        ret.add(Character.class);
+        ret.add(Byte.class);
+        ret.add(Short.class);
+        ret.add(Integer.class);
+        ret.add(Long.class);
+        ret.add(Float.class);
+        ret.add(Double.class);
+        ret.add(Void.class);
+
+        WRAPPER_TYPES = ret;
+    }
 
     /**
      * The type of the entity class to store in Mongo.
@@ -154,8 +168,6 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
     public List<T> findAll(Query query, List<Object> parameters) {
         var bson = mapToCondition(query, parameters);
 
-        System.out.println(bson.toBsonDocument());
-
         return StreamSupport
             .stream(
                 this.collection.find(bson).spliterator(), false
@@ -213,6 +225,8 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
             return resolveAnd(and, parameters);
         } else if (query instanceof Or or) {
             return resolveOr(or, parameters);
+        } else if (query instanceof True) {
+            return empty();
         }
 
         throw new IllegalArgumentException(MessageFormat.format(
@@ -243,7 +257,10 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
 
     private Bson resolveElemMatch(ElemMatch elemMatch, List<Object> parameters) {
         if (elemMatch.getSelector() instanceof Field field) {
-            return elemMatch(field.getFQN(), mapToCondition(elemMatch.getQuery(), parameters));
+            return elemMatch(
+                field.getFQN(),
+                mapToCondition(elemMatch.getQuery(), parameters)
+            );
         } else {
             throw new IllegalArgumentException(MessageFormat.format(
                 "MongoQueryEngine does not support different selector's than field for `elemMatch` operator." +
@@ -259,7 +276,10 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
                 var equalsValue = this.resolveValue(equals.getValue(), parameters);
 
                 if (equalsValue.isLeft()) {
-                    return eq(field.getFQN(), equalsValue.getLeftForce());
+                    return eq(
+                        resolveField(field),
+                        transformValueForQuery(equalsValue.getLeftForce())
+                    );
                 }
             }
         }
@@ -268,6 +288,14 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
             "Query `{0}` is not supported within this engine.",
             match
         ));
+    }
+
+    private String resolveField(Field field) {
+        if (field.getFQN().equalsIgnoreCase("guid")) {
+            return "_id";
+        } else {
+            return field.getFQN();
+        }
     }
 
     private Either<Object, Document> resolveValue(Value value, List<Object> parameters) {
@@ -292,6 +320,20 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
             "Value `{0}` cannot be resolved within this engine",
             value
         ));
+    }
+
+    /**
+     * Complex type should be mapped into string.
+     *
+     * @param value The value to transform.
+     * @return Actual value for primitive types. Otherwise {@link String}.
+     */
+    private Object transformValueForQuery(Object value) {
+        if (value.getClass().isPrimitive() || WRAPPER_TYPES.contains(value.getClass())) {
+            return value;
+        } else {
+            return value.toString();
+        }
     }
 
     @SuppressWarnings("unchecked")

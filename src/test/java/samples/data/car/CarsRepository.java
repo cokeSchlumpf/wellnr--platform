@@ -1,0 +1,20 @@
+package samples.data.car;
+
+import com.wellnr.platform.common.guid.GUID;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface CarsRepository {
+
+    Optional<Car> findOneCarByGUID(GUID guid);
+
+    List<Car> findAllCars();
+
+    List<Car> findAllCarsByBrand(String brand);
+
+    void insertOrUpdateCar(Car car);
+
+    void removeCarByGUID(GUID guid);
+
+}

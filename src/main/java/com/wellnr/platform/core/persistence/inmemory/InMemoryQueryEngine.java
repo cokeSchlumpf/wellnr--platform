@@ -1,6 +1,7 @@
 package com.wellnr.platform.core.persistence.inmemory;
 
 import com.google.common.collect.Lists;
+import com.wellnr.platform.common.ReflectionUtils;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.tuples.Nothing;
 import com.wellnr.platform.common.tuples.Tuple;
@@ -220,72 +221,8 @@ public class InMemoryQueryEngine<T> implements QueryEngine<T> {
         return obj -> result;
     }
 
-    @SuppressWarnings("unchecked")
     private <U> Function1<U, Object> resolveValueFromField(Field field, Class<U> type) {
-        var objFieldTuple = getValueFromObject(field.getName(), type);
-        var objFieldGetter = objFieldTuple._1;
-        var objFieldType = objFieldTuple._2;
-
-        var childField = field.getChildField();
-
-        if (childField.isPresent()) {
-            var nextFunction = resolveValueFromField(childField.get(), (Class<Object>) objFieldType);
-
-            return obj -> {
-                var nextObj = objFieldGetter.get(obj);
-
-                if (Objects.nonNull(nextObj)) {
-                    return nextFunction.apply(nextObj);
-                } else {
-                    return Nothing.getInstance();
-                }
-            };
-        } else {
-            return obj -> {
-                var nextObj = objFieldGetter.get(obj);
-
-                if (Objects.nonNull(nextObj)) {
-                    return nextObj;
-                } else {
-                    return Nothing.getInstance();
-                }
-            };
-        }
-    }
-
-    private <U> Tuple2<Function1<U, Object>, Class<?>> getValueFromObject(String field, Class<U> type) {
-        /*
-         * Try to find getter.
-         */
-        var getter = Arrays
-            .stream(type.getMethods())
-            .filter(m -> m.getName().equalsIgnoreCase("get" + field))
-            .filter(m -> m.getParameters().length == 0)
-            .findFirst();
-
-        var objField = Arrays
-            .stream(type.getFields())
-            .filter(m -> m.getName().equalsIgnoreCase(field))
-            .findFirst();
-
-        if (getter.isPresent()) {
-            return Tuple.apply(
-                obj -> getter.get().invoke(obj),
-                getter.get().getReturnType()
-            );
-        } else if (objField.isPresent()) {
-            objField.get().setAccessible(true);
-
-            return Tuple.apply(
-                obj -> objField.get().get(obj),
-                objField.get().getType()
-            );
-        } else {
-            throw new RuntimeException(MessageFormat.format(
-                "Can''t find field `{0}` within type `{1}`",
-                field, type.getName()
-            ));
-        }
+        return ReflectionUtils.getValueGetterForNestedFieldForClass(field.getFQN(), type);
     }
 
 }

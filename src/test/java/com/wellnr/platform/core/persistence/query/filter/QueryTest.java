@@ -2,10 +2,11 @@ package com.wellnr.platform.core.persistence.query.filter;
 
 import com.wellnr.platform.core.persistence.inmemory.InMemoryQueryEngine;
 import com.wellnr.platform.core.persistence.query.QueryEngine;
-import lombok.AllArgsConstructor;
-import lombok.Value;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import samples.data.car.Car;
+import samples.data.car.Driver;
+import samples.data.car.Engine;
 
 import java.util.List;
 
@@ -87,40 +88,6 @@ class QueryTest {
             Car.apply("Tesla", "black", Engine.apply(180, "electric"), List.of()),
             Car.apply("Subaru", "silver", Engine.apply(180, "petrol"), List.of())
         );
-    }
-
-    @Value
-    @AllArgsConstructor(staticName = "apply")
-    public static class Car {
-
-        String brand;
-
-        String color;
-
-        Engine engine;
-
-        List<Driver> drivers;
-
-    }
-
-    @Value
-    @AllArgsConstructor(staticName = "apply")
-    public static class Engine {
-
-        int power;
-
-        String type;
-
-    }
-
-    @Value
-    @AllArgsConstructor(staticName = "apply")
-    public static class Driver {
-
-        String name;
-
-        int age;
-
     }
 
 }

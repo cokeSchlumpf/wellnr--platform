@@ -1,22 +1,17 @@
 package com.wellnr.platform.core.persistence.mongo;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wellnr.platform.common.databind.DefaultObjectMapperFactory;
 import com.wellnr.platform.common.guid.GUID;
-import com.wellnr.platform.common.guid.HasGUID;
 import com.wellnr.platform.core.config.MongoDatabaseConfiguration;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.Value;
 import org.bson.UuidRepresentation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mongojack.JacksonMongoCollection;
-import org.mongojack.ObjectId;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
+import samples.data.car.Car;
+import samples.data.car.Driver;
+import samples.data.car.Engine;
 
 import java.util.List;
 
@@ -63,6 +58,15 @@ public class MongoQueryEngineTest {
     }
 
     @Test
+    public void testGUID() {
+        var result = engine.findAll(match($("guid"), eq(v("/abc"))));
+        assertEquals(1, result.size());
+
+        result = engine.findAll(match($("guid"), eq(v(GUID.apply("def")))));
+        assertEquals(1, result.size());
+    }
+
+    @Test
     public void testFindNestedFieldMatch() {
         var query = match($("engine.type"), eq(v("electric")));
         var result = engine.findAll(query);
@@ -104,71 +108,6 @@ public class MongoQueryEngineTest {
 
         assertEquals(1, result.size());
         assertEquals("BMW", result.get(0).getBrand());
-    }
-
-    @Value
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class Car implements HasGUID {
-
-        private static final String GUID = "_id";
-        private static final String BRAND = "brand";
-        private static final String COLOR = "color";
-        private static final String ENGINE = "engine";
-        private static final String DRIVERS = "drivers";
-
-        @ObjectId
-        @JsonProperty(GUID)
-        GUID guid;
-
-        @JsonProperty(BRAND)
-        String brand;
-
-        @JsonProperty(COLOR)
-        String color;
-
-        @JsonProperty(ENGINE)
-        Engine engine;
-
-        @JsonProperty(DRIVERS)
-        List<Driver> drivers;
-
-        @JsonCreator
-        public static Car apply(
-            @ObjectId @JsonProperty(GUID) GUID guid,
-            @JsonProperty(BRAND) String brand,
-            @JsonProperty(COLOR) String color,
-            @JsonProperty(ENGINE) Engine engine,
-            @JsonProperty(DRIVERS) List<Driver> drivers
-        ) {
-            return new Car(guid, brand, color, engine, drivers);
-        }
-
-        @Override
-        public GUID getGUID() {
-            return this.guid;
-        }
-    }
-
-    @Value
-    @NoArgsConstructor(force = true)
-    @AllArgsConstructor(staticName = "apply")
-    public static class Engine {
-
-        int power;
-
-        String type;
-
-    }
-
-    @Value
-    @NoArgsConstructor(force = true)
-    @AllArgsConstructor(staticName = "apply")
-    public static class Driver {
-
-        String name;
-
-        int age;
-
     }
 
 }

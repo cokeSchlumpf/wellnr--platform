@@ -17,6 +17,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
@@ -121,6 +122,10 @@ public final class QueryEngineRepository {
         }
 
         return (proxy, ignore, args) -> {
+            if (Objects.isNull(args)) {
+                args = new Object[] {};
+            }
+
             var engine = collections.get(entityType.getName());
             var result = operation.get(engine, Arrays.stream(args).toList());
 

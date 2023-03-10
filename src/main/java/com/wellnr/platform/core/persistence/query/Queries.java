@@ -8,6 +8,7 @@ import com.wellnr.platform.core.persistence.query.annotations.GUID;
 import com.wellnr.platform.core.persistence.query.annotations.Path;
 import com.wellnr.platform.core.persistence.query.filter.*;
 import com.wellnr.platform.core.persistence.query.values.*;
+import org.apache.commons.text.CaseUtils;
 
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -238,7 +239,7 @@ public class Queries {
                 if (pathAnnotation.isPresent()) {
                     subQueries.add(match($(pathAnnotation.get().value()), eq(p(parametersCount))));
                 } else {
-                    subQueries.add(match($(queryPart), eq(p(parametersCount))));
+                    subQueries.add(match($(CaseUtils.toCamelCase(queryPart, false)), eq(p(parametersCount))));
                 }
 
                 parametersCount = parametersCount + 1;
