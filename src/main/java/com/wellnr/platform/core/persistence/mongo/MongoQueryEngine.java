@@ -42,9 +42,9 @@ import static com.mongodb.client.model.Filters.*;
  * @param <T> The type of the entity class to store in Mongo.
  */
 @AllArgsConstructor(staticName = "apply")
-public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T> {
+public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T, Bson> {
 
-    private static Set<Class<?>> WRAPPER_TYPES;
+    private static final Set<Class<?>> WRAPPER_TYPES;
 
     static {
         Set<Class<?>> ret = new HashSet<Class<?>>();
@@ -60,11 +60,6 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
 
         WRAPPER_TYPES = ret;
     }
-
-    /**
-     * The type of the entity class to store in Mongo.
-     */
-    // Class<T> type;
 
     /**
      * The mongo database client.
@@ -208,6 +203,37 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
         }
     }
 
+    @Override
+    public void insertOrUpdate(T item, Bson customQuery) {
+        var options = new ReplaceOptions().upsert(true);
+        this.collection.replaceOne(customQuery, item, options);
+    }
+
+    @Override
+    public List<T> findAll(Bson customQuery) {
+        return StreamSupport
+            .stream(
+                this.collection.find(customQuery).spliterator(), false
+            )
+            .toList();
+    }
+
+    @Override
+    public Optional<T> findOne(Bson customQuery) {
+        return Optional.ofNullable(
+            this.collection.findOne(customQuery)
+        );
+    }
+
+    @Override
+    public void remove(Bson customQuery) {
+        this
+            .findAll(customQuery)
+            .forEach(entity -> {
+                collection.removeById(entity.getGUID().toString());
+            });
+    }
+
     private void removeFromQuery(Query query, List<Object> parameters) {
         this
             .findAll(query, parameters)
@@ -298,6 +324,7 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T>
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private Either<Object, Document> resolveValue(Value value, List<Object> parameters) {
         if (value instanceof StaticValue staticValue) {
             return Either.fromLeft(staticValue.getValue());

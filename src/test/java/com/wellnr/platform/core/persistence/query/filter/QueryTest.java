@@ -1,7 +1,7 @@
 package com.wellnr.platform.core.persistence.query.filter;
 
 import com.wellnr.platform.core.persistence.inmemory.InMemoryQueryEngine;
-import com.wellnr.platform.core.persistence.query.QueryEngine;
+import com.wellnr.platform.core.persistence.query.QueryEngineWithoutCustomQueries;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import samples.data.car.Car;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryTest {
 
-    private QueryEngine<Car> engine;
+    private QueryEngineWithoutCustomQueries<Car> engine;
 
     @BeforeEach
     public void setup() {

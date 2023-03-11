@@ -4,20 +4,22 @@ import com.google.common.collect.Lists;
 import com.wellnr.platform.common.ReflectionUtils;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.tuples.Nothing;
-import com.wellnr.platform.common.tuples.Tuple;
-import com.wellnr.platform.common.tuples.Tuple2;
 import com.wellnr.platform.core.persistence.query.QueryEngine;
+import com.wellnr.platform.core.persistence.query.QueryEngineWithoutCustomQueries;
 import com.wellnr.platform.core.persistence.query.filter.*;
 import com.wellnr.platform.core.persistence.query.values.*;
 import lombok.AllArgsConstructor;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @lombok.Value
 @AllArgsConstructor(staticName = "apply")
-public class InMemoryQueryEngine<T> implements QueryEngine<T> {
+public class InMemoryQueryEngine<T> implements QueryEngineWithoutCustomQueries<T> {
 
     Class<T> type;
 
@@ -139,7 +141,7 @@ public class InMemoryQueryEngine<T> implements QueryEngine<T> {
         };
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private <U> Function1<U, Boolean> resolveElemMatch(ElemMatch elemMatch, List<Object> parameters) {
         return obj -> {
             var getLeft = resolveValue(elemMatch.getSelector(), (Class<Object>) obj.getClass(), parameters);
@@ -167,6 +169,7 @@ public class InMemoryQueryEngine<T> implements QueryEngine<T> {
         };
     }
 
+    @SuppressWarnings("rawtypes")
     private <U> Function1<U, Object> resolveValue(Value value, Class<U> type, List<Object> parameters) {
         if (value instanceof Field f) {
             return resolveValueFromField(f, type);

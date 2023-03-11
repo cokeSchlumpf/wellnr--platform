@@ -5,7 +5,7 @@ import com.wellnr.platform.core.persistence.query.filter.Query;
 import java.util.List;
 import java.util.Optional;
 
-public interface QueryEngine<T> {
+public interface QueryEngine<T, C> {
 
     /**
      * Inserts or updates an instance.
@@ -82,10 +82,55 @@ public interface QueryEngine<T> {
     /**
      * Remove entities from the database matching a condition.
      *
-     * @param query      The query to find items to be deleted.
+     * @param query The query to find items to be deleted.
      */
     default void remove(Query query) {
         remove(query, List.of());
     }
 
+    /**
+     * Insert or update an entity in the database. The query will be extracted
+     * based on custom annotations of the method.
+     * <p>
+     * This function is used by {@link QueryEngineRepository} when a method is detected to have a custom
+     * query annotation.
+     *
+     * @param customQuery A custom query.
+     */
+    void insertOrUpdate(T item, C customQuery);
+
+    /**
+     * Find all matches within the database. The query will be extracted
+     * based on custom annotations of the method.
+     * <p>
+     * This function is used by {@link QueryEngineRepository} when a method is detected to have a custom
+     * query annotation.
+     *
+     * @param customQuery A custom query.
+     * @return The result of the query.
+     */
+    List<T> findAll(C customQuery);
+
+    /**
+     * Find a single match within the database. The query will be extracted
+     * based on custom annotations of the method.
+     * <p>
+     * This function is used by {@link QueryEngineRepository} when a method is detected to have a custom
+     * query annotation.
+     *
+     * @param customQuery A custom query.
+     * @return The result of the query.
+     */
+    Optional<T> findOne(C customQuery);
+
+    /**
+     * Remove an entity from the database. The query will be extracted
+     * based on custom annotations of the method.
+     * <p>
+     * This function is used by {@link QueryEngineRepository} when a method is detected to have a custom
+     * query annotation.
+     *
+     * @param customQuery A custom query.
+     */
+    void remove(C customQuery);
 }
