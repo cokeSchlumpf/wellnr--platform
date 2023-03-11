@@ -1,5 +1,7 @@
 package com.wellnr.platform.core.persistence.mongo;
 
+import com.wellnr.platform.common.Operators;
+import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.HasGUID;
 import com.wellnr.platform.common.tuples.Tuple2;
 import com.wellnr.platform.core.config.MongoDatabaseConfiguration;
@@ -10,9 +12,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.bson.conversions.Bson;
 
+import java.lang.reflect.Method;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -74,4 +79,32 @@ public final class MongoRepository extends AbstractQueryEngineRepositoryFactory<
         );
     }
 
+    @Override
+    protected Optional<Function1<List<Object>, Bson>> getCustomQueryFromMethod(Method m) {
+        var maybeAnnotation = Optional.ofNullable(m.getAnnotation(CustomMongoQuery.class));
+
+        if (maybeAnnotation.isPresent()) {
+            var queryDefinitionClass = maybeAnnotation.get().value();
+            var methodName = maybeAnnotation.get().methodName().length() > 0 ? maybeAnnotation.get()
+                .methodName() : m.getName();
+            var queryFactory = Operators.suppressExceptions(() -> queryDefinitionClass.getMethod(methodName));
+            var resultType = queryFactory.getReturnType();
+
+            if (!resultType.equals(Bson.class)) {
+                throw new IllegalArgumentException(MessageFormat.format(
+                    "Method `{0}#{1}` must have return type Bson.",
+                    queryDefinitionClass.getName(), queryFactory.getName()
+                ));
+            } else if (queryFactory.getParameters().length != 1 || !queryFactory.getParameters()[0].getType().equals(List.class)) {
+                throw new IllegalArgumentException(MessageFormat.format(
+                    "Method `{0}#{1}` must accept one parameter of type List<Object> for accepting arguments",
+                    queryDefinitionClass.getName(), queryFactory.getName()
+                ));
+            }
+
+            return Optional.of(args -> (Bson) queryFactory.invoke(args));
+        } else {
+            return super.getCustomQueryFromMethod(m);
+        }
+    }
 }

@@ -172,7 +172,7 @@ public abstract class AbstractQueryEngineRepositoryFactory<T, C> {
     protected abstract QueryEngine<T, C> createQueryEngine(Class<T> entityType);
 
     @SuppressWarnings("unused")
-    protected Optional<C> getCustomQueryFromMethod(Method m) {
+    protected Optional<Function1<List<Object>, C>> getCustomQueryFromMethod(Method m) {
         return Optional.empty();
     }
 
