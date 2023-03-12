@@ -1,8 +1,10 @@
 package com.wellnr.platform.core.persistence.mongo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.ReplaceOptions;
+import com.wellnr.platform.common.ReflectionUtils;
 import com.wellnr.platform.common.databind.DefaultObjectMapperFactory;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.HasGUID;
@@ -14,6 +16,7 @@ import com.wellnr.platform.core.config.MongoDatabaseConfiguration;
 import com.wellnr.platform.core.persistence.query.QueryEngine;
 import com.wellnr.platform.core.persistence.query.filter.*;
 import com.wellnr.platform.core.persistence.query.values.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.With;
@@ -21,6 +24,7 @@ import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.conversions.Bson;
 import org.mongojack.JacksonMongoCollection;
+import org.mongojack.ObjectId;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -41,7 +45,7 @@ import static com.mongodb.client.model.Filters.*;
  *
  * @param <T> The type of the entity class to store in Mongo.
  */
-@AllArgsConstructor(staticName = "apply")
+@AllArgsConstructor(access = AccessLevel.PACKAGE, staticName = "apply")
 public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T, Bson> {
 
     private static final Set<Class<?>> WRAPPER_TYPES;
@@ -80,6 +84,29 @@ public final class MongoQueryEngine<T extends HasGUID> implements QueryEngine<T,
         MongoDatabase database,
         MongoCollectionProperties collectionProperties
     ) {
+        /*
+         * Assert the type has required annotations for Jackson and Mongo.
+         */
+        var maybeObjectId = ReflectionUtils.getAnnotationForField(type, "guid", ObjectId.class);
+        var maybeIdName = ReflectionUtils.getAnnotationForField(type, "guid", JsonProperty.class);
+
+        if (maybeObjectId.isEmpty()) {
+            throw new IllegalArgumentException(MessageFormat.format(
+                "Missing @ObjectId annotation for type `{0}`. This is required on `guid` field for MongoQueryEngine.",
+                type.getName()
+            ));
+        }
+
+        if (maybeIdName.isEmpty() || !maybeIdName.get().value().equals("_id")) {
+            throw new IllegalArgumentException(MessageFormat.format(
+                "Missing or wrong @JsonProperty annotation for type `{0}`. `guid` requires @JsonProperty(\"_id\").",
+                type.getName()
+            ));
+        }
+
+        /*
+         * Create instance.
+         */
         var collection = JacksonMongoCollection
             .builder()
             .withObjectMapper(collectionProperties.getObjectMapper().orElseGet(() ->

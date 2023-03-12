@@ -18,9 +18,11 @@ public abstract class AbstractQueryEngineRepositoryTest {
 
     @Test
     public void test() {
-        var repo = getCarsRepository(null);
+        var context = PlatformContext.apply();
+        var repo = getCarsRepository(context);
         repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "bmw"), "BMW", "red", Engine.apply(10, "gas"), List.of()));
-        repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "audi"), "Audi", "yellow", Engine.apply(10, "gas"), List.of()));
+        repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "audi"), "Audi", "yellow", Engine.apply(10, "gas"),
+            List.of()));
 
         var result = repo.findAllCarsByBrand("BMW");
 
@@ -38,7 +40,8 @@ public abstract class AbstractQueryEngineRepositoryTest {
         var singleResult = repo.findOneCarByGUID(GUID.apply("cars", "audi"));
         assertTrue(singleResult.isPresent());
 
-        repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "tesla"), "Tesla", "silver", Engine.apply(110, "electric"), List.of()));
+        repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "tesla"), "Tesla", "silver", Engine.apply(110,
+            "electric"), List.of()));
         result = repo.findAllCars();
         assertEquals(2, result.size());
 
@@ -46,6 +49,10 @@ public abstract class AbstractQueryEngineRepositoryTest {
         assertEquals(singleResultGet.getBrand(), "Tesla");
     }
 
+    /**
+     * If an entity type implement {@link com.wellnr.platform.core.persistence.memento.HasMemento}, the entities are
+     * mapped into the Memento-type when storing an entity and re-transformed into actual type during read operations.
+     */
     @Test
     public void testMementoRepo() {
         var car = Car.apply(

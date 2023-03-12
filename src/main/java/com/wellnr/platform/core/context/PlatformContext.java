@@ -40,20 +40,6 @@ public interface PlatformContext {
     /**
      * Register any object in the context during platform initialisation. Ensure that for every type (class)
      * the context can only have a single context value registered.
-     * <p>
-     * This method will use the objects class to register the value.
-     *
-     * @param any The value to be registered.
-     * @return The instance of the platform context to chain calls.
-     */
-    @SuppressWarnings("unchecked")
-    default <T> PlatformContext withSingletonInstance(T any) {
-        return this.withSingletonInstance(any, (Class<T>) any.getClass());
-    }
-
-    /**
-     * Register any object in the context during platform initialisation. Ensure that for every type (class)
-     * the context can only have a single context value registered.
      *
      * @param any   The value to be registered.
      * @param clazz The class for which the value should be registered.

@@ -36,4 +36,5 @@ public class LogbookEntry implements HasMemento<LogbookEntryMemento> {
     public GUID getGUID() {
         return guid;
     }
+
 }

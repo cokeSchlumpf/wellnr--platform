@@ -2,6 +2,7 @@ package com.wellnr.platform.core.context;
 
 import com.google.common.collect.Sets;
 import com.wellnr.platform.common.databind.DefaultObjectMapperFactory;
+import com.wellnr.platform.common.databind.ObjectMapperFactory;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
@@ -27,8 +28,8 @@ final class PlatformContextImpl implements PlatformContext {
         var initializing = InitializingPlatformContext
             .apply()
             .withModule(UsersModule.apply())
-            .withSingletonInstance(DefaultObjectMapperFactory.apply())
-            .withSingletonInstance(Javalin.create());
+            .withSingletonInstance(DefaultObjectMapperFactory.apply(), ObjectMapperFactory.class)
+            .withSingletonInstance(Javalin.create(), Javalin.class);
 
         return new PlatformContextImpl(initializing);
     }

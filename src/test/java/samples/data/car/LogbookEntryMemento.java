@@ -7,6 +7,7 @@ import com.wellnr.platform.common.guid.HasGUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import org.mongojack.ObjectId;
 
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -17,6 +18,7 @@ public class LogbookEntryMemento implements HasGUID {
     private static final String FROM = "from";
     private static final String TO = "to";
 
+    @ObjectId
     @JsonProperty(ID)
     GUID guid;
 

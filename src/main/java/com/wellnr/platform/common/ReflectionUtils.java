@@ -4,6 +4,7 @@ import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.tuples.Tuple;
 import com.wellnr.platform.common.tuples.Tuple2;
 
+import java.lang.annotation.Annotation;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Objects;
@@ -13,6 +14,34 @@ public final class ReflectionUtils {
 
     private ReflectionUtils() {
 
+    }
+
+    /**
+     * Checks field or related getter for existence of an annotation.
+     *
+     * @param type The type to analyze.
+     * @param field The field name.
+     * @return The annotation instance if found.
+     * @param <T> The type of the annotation.
+     */
+    public static <T extends Annotation> Optional<T> getAnnotationForField(Class<?> type, String field, Class<T> annotationType) {
+        var maybeFieldAnnotation = Arrays
+            .stream(type.getDeclaredFields())
+            .filter(f -> f.getName().equalsIgnoreCase(field))
+            .findFirst()
+            .flatMap(f -> Optional.ofNullable(f.getAnnotation(annotationType)));
+
+        var maybeGetter = Arrays
+            .stream(type.getMethods())
+            .filter(m -> m.getName().equalsIgnoreCase("get" + field))
+            .findFirst()
+            .flatMap(m -> Optional.ofNullable(m.getAnnotation(annotationType)));
+
+        if (maybeFieldAnnotation.isPresent()) {
+            return maybeFieldAnnotation;
+        } else {
+            return maybeGetter;
+        }
     }
 
 
@@ -78,7 +107,7 @@ public final class ReflectionUtils {
             .findFirst();
 
         var objField = Arrays
-            .stream(type.getFields())
+            .stream(type.getDeclaredFields())
             .filter(m -> m.getName().equalsIgnoreCase(field))
             .findFirst();
 
