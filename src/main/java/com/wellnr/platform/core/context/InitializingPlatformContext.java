@@ -28,7 +28,7 @@ final class InitializingPlatformContext implements PlatformContext {
     }
 
     @Override
-    public <T> PlatformContext withValue(T any, Class<? super T> clazz) {
+    public <T> PlatformContext withSingletonInstance(T any, Class<? super T> clazz) {
         this.values.put(clazz, any);
         return this;
     }
@@ -60,7 +60,7 @@ final class InitializingPlatformContext implements PlatformContext {
     }
 
     @Override
-    public <T> T getValue(Class<T> clazz) {
+    public <T> T getInstance(Class<T> clazz) {
         throw new IllegalStateException("`getValue` must not be called during system initialization.");
     }
 }

@@ -27,8 +27,8 @@ final class PlatformContextImpl implements PlatformContext {
         var initializing = InitializingPlatformContext
             .apply()
             .withModule(UsersModule.apply())
-            .withValue(DefaultObjectMapperFactory.apply())
-            .withValue(Javalin.create());
+            .withSingletonInstance(DefaultObjectMapperFactory.apply())
+            .withSingletonInstance(Javalin.create());
 
         return new PlatformContextImpl(initializing);
     }
@@ -67,8 +67,8 @@ final class PlatformContextImpl implements PlatformContext {
     }
 
     @Override
-    public <T> PlatformContext withValue(T any, Class<? super T> clazz) {
-        delegate.withValue(any, clazz);
+    public <T> PlatformContext withSingletonInstance(T any, Class<? super T> clazz) {
+        delegate.withSingletonInstance(any, clazz);
         return this;
     }
 
@@ -99,8 +99,8 @@ final class PlatformContextImpl implements PlatformContext {
     }
 
     @Override
-    public <T> T getValue(Class<T> clazz) {
-        return delegate.getValue(clazz);
+    public <T> T getInstance(Class<T> clazz) {
+        return delegate.getInstance(clazz);
     }
 
 }

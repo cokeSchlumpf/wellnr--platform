@@ -8,8 +8,6 @@ import com.wellnr.platform.core.config.MongoDatabaseConfiguration;
 import com.wellnr.platform.core.context.PlatformContext;
 import com.wellnr.platform.core.persistence.query.AbstractQueryEngineRepositoryFactory;
 import com.wellnr.platform.core.persistence.query.QueryEngine;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import org.bson.conversions.Bson;
 
 import java.lang.reflect.Method;
@@ -20,12 +18,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MongoRepository extends AbstractQueryEngineRepositoryFactory<HasGUID, Bson> {
 
     private final MongoDatabaseConfiguration configuration;
 
     private final Map<Class<HasGUID>, MongoQueryEngine.MongoCollectionProperties> entityTypes;
+
+    private MongoRepository(
+        PlatformContext ctx,
+        MongoDatabaseConfiguration configuration,
+        Map<Class<HasGUID>, MongoQueryEngine.MongoCollectionProperties> entityTypes) {
+
+        super(ctx);
+        this.configuration = configuration;
+        this.entityTypes = entityTypes;
+    }
 
     @SuppressWarnings("unchecked")
     public static <R> R create(
@@ -35,6 +42,7 @@ public final class MongoRepository extends AbstractQueryEngineRepositoryFactory<
         List<Tuple2<Class<? extends HasGUID>, MongoQueryEngine.MongoCollectionProperties>> entityTypes
     ) {
         var factory = new MongoRepository(
+            ctx,
             configuration,
             entityTypes.stream().collect(Collectors.toMap(t -> (Class<HasGUID>) t._1, Tuple2::get_2))
         );
@@ -73,9 +81,9 @@ public final class MongoRepository extends AbstractQueryEngineRepositoryFactory<
     }
 
     @Override
-    protected QueryEngine<HasGUID, Bson> createQueryEngine(Class<HasGUID> entityType) {
+    protected QueryEngine<HasGUID, Bson> createQueryEngine(Class<HasGUID> entityType, Class<HasGUID> mementoType) {
         return MongoQueryEngine.apply(
-            entityType, configuration, this.entityTypes.get(entityType)
+            mementoType, configuration, this.entityTypes.get(entityType)
         );
     }
 

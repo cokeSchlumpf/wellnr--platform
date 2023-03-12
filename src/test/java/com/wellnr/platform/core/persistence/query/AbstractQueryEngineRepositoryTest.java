@@ -3,9 +3,7 @@ package com.wellnr.platform.core.persistence.query;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.context.PlatformContext;
 import org.junit.jupiter.api.Test;
-import samples.data.car.Car;
-import samples.data.car.CarsRepository;
-import samples.data.car.Engine;
+import samples.data.car.*;
 
 import java.util.List;
 
@@ -14,11 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractQueryEngineRepositoryTest {
 
-    public abstract CarsRepository getRepository(PlatformContext context);
+    public abstract CarsRepository getCarsRepository(PlatformContext context);
+
+    public abstract LogbookEntryRepository getLogbookEntriesRepository(PlatformContext context);
 
     @Test
     public void test() {
-        var repo = getRepository(null);
+        var repo = getCarsRepository(null);
         repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "bmw"), "BMW", "red", Engine.apply(10, "gas"), List.of()));
         repo.insertOrUpdateCar(Car.apply(GUID.apply("cars", "audi"), "Audi", "yellow", Engine.apply(10, "gas"), List.of()));
 
@@ -44,6 +44,34 @@ public abstract class AbstractQueryEngineRepositoryTest {
 
         var singleResultGet = repo.getCarByGUID(GUID.apply("cars", "tesla"));
         assertEquals(singleResultGet.getBrand(), "Tesla");
+    }
+
+    @Test
+    public void testMementoRepo() {
+        var car = Car.apply(
+            GUID.apply("cars", "bmw"), "BMW", "red", Engine.apply(10, "gas"), List.of()
+        );
+
+        var entry = LogbookEntry.apply(
+            GUID.apply("abc"), car, "Plauen", "Merzig"
+        );
+
+        var context = PlatformContext.apply();
+        var cars = getCarsRepository(context);
+        var entries = getLogbookEntriesRepository(context);
+
+        context
+            .withSingletonInstance(cars, CarsRepository.class)
+            .withSingletonInstance(entries, LogbookEntryRepository.class)
+            .initialize();
+
+        cars.insertOrUpdateCar(car);
+        entries.insertOrUpdateLogbookEntry(entry);
+
+        var result = entries.findAllLogbookEntriesByFrom("Plauen");
+
+        assertEquals(1, result.size());
+        assertEquals(entry, result.get(0));
     }
 
 }

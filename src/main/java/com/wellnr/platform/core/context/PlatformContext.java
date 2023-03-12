@@ -47,8 +47,8 @@ public interface PlatformContext {
      * @return The instance of the platform context to chain calls.
      */
     @SuppressWarnings("unchecked")
-    default <T> PlatformContext withValue(T any) {
-        return this.withValue(any, (Class<T>) any.getClass());
+    default <T> PlatformContext withSingletonInstance(T any) {
+        return this.withSingletonInstance(any, (Class<T>) any.getClass());
     }
 
     /**
@@ -60,7 +60,7 @@ public interface PlatformContext {
      * @param <T>   The type of the value.
      * @return The instance of the platform context to chain calls.
      */
-    <T> PlatformContext withValue(T any, Class<? super T> clazz);
+    <T> PlatformContext withSingletonInstance(T any, Class<? super T> clazz);
 
     /**
      * Register a platform module during initialisation of the application.
@@ -119,6 +119,6 @@ public interface PlatformContext {
      * @param <T>   The type of the value.
      * @return The value, if registered.
      */
-    <T> T getValue(Class<T> clazz);
+    <T> T getInstance(Class<T> clazz);
 
 }

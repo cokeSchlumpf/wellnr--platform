@@ -1,7 +1,7 @@
 package com.wellnr.platform.core.modules.users.values.rbac;
 
 import com.wellnr.platform.common.guid.GUID;
-import com.wellnr.platform.core.HasMemento;
+import com.wellnr.platform.core.persistence.memento.HasMemento;
 import com.wellnr.platform.core.context.PlatformContext;
 import com.wellnr.platform.core.modules.users.UsersModule;
 import com.wellnr.platform.core.values.EventMetadata;
@@ -80,4 +80,8 @@ public class GrantedRoleAssignment implements HasMemento<GrantedRoleAssignmentMe
             assignment.getRole().getGUID());
     }
 
+    @Override
+    public GUID getGUID() {
+        return guid;
+    }
 }

@@ -1,4 +1,6 @@
-package com.wellnr.platform.core;
+package com.wellnr.platform.core.persistence.memento;
+
+import com.wellnr.platform.common.guid.HasGUID;
 
 /**
  * Markup interface to indicate that a value class has a memento. A memento is used to extract the state of
@@ -44,7 +46,7 @@ package com.wellnr.platform.core;
  *         this.currentText = new StringBuilder();
  *     }
  *
- *     public static CompletionStage<TextWindow> fromMemento(PlatformContext context TextWindowMemento memento) {
+ *     public static CompletionStage<TextWindow> fromMemento(PlatformContext context, TextWindowMemento memento) {
  *          var window = new TextWindow();
  *          window.currentText.append(memento.getText);
  *          return CompletableFuture.completedFuture(window);
@@ -62,7 +64,7 @@ package com.wellnr.platform.core;
  *
  * @param <T> The type of the memento.
  */
-public interface HasMemento<T> {
+public interface HasMemento<T> extends HasGUID {
 
     T getMemento();
 

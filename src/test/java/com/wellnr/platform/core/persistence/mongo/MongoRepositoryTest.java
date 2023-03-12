@@ -8,6 +8,8 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 import samples.data.car.Car;
 import samples.data.car.CarsRepository;
+import samples.data.car.LogbookEntry;
+import samples.data.car.LogbookEntryRepository;
 
 public class MongoRepositoryTest extends AbstractQueryEngineRepositoryTest {
 
@@ -20,13 +22,27 @@ public class MongoRepositoryTest extends AbstractQueryEngineRepositoryTest {
     }
 
     @Override
-    public CarsRepository getRepository(PlatformContext context) {
+    public CarsRepository getCarsRepository(PlatformContext context) {
         var config = MongoDatabaseConfiguration.apply(
-            "test",
+            "test_database",
             mongoDBContainer.getConnectionString()
         );
 
         return MongoRepository.create(context, CarsRepository.class, config, Car.class);
+    }
+
+    @Override
+    public LogbookEntryRepository getLogbookEntriesRepository(PlatformContext context) {
+        var config = MongoDatabaseConfiguration.apply(
+            "test_database",
+            mongoDBContainer.getConnectionString()
+        );
+
+        return MongoRepository.create(
+            context,
+            LogbookEntryRepository.class,
+            config,
+            LogbookEntry.class);
     }
 
 }

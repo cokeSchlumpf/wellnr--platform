@@ -69,7 +69,7 @@ final class InitializedPlatformContext implements PlatformContext {
     }
 
     @Override
-    public <T> PlatformContext withValue(T any, Class<? super T> clazz) {
+    public <T> PlatformContext withSingletonInstance(T any, Class<? super T> clazz) {
         throw new IllegalStateException("`withValue` must not be called after initialization.");
     }
 
@@ -115,7 +115,7 @@ final class InitializedPlatformContext implements PlatformContext {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T getValue(Class<T> clazz) {
+    public <T> T getInstance(Class<T> clazz) {
         if (values.containsKey(clazz) && clazz.isInstance(values.get(clazz))) {
             return (T) values.get(clazz);
         } else {
