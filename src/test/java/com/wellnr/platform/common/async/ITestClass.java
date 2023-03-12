@@ -1,33 +1,32 @@
-package com.wellnr.platform.common;
+package com.wellnr.platform.common.async;
 
-import com.wellnr.platform.common.async.ReadsOnly;
-import com.wellnr.platform.common.async.Writes;
 import com.wellnr.platform.common.tuples.Done;
 
 import java.util.concurrent.CompletionStage;
 
 public interface ITestClass {
-    @Writes
+
+    @AsyncMethod(pure = false)
     CompletionStage<Done> addAsync(int number);
 
-    @Writes
+    @AsyncMethod(pure = false)
     CompletionStage<Done> subAsync(int number);
 
-    @Writes
+    @AsyncMethod(pure = true)
     CompletionStage<Done> failCS();
 
-    @Writes
+    @AsyncMethod(pure = true)
     CompletionStage<Done> failAsync();
 
-    @Writes
+    @AsyncMethod(pure = false)
     Done add(int number);
 
-    @Writes
+    @AsyncMethod(pure = false)
     void sub(int number);
 
-    @ReadsOnly
+    @AsyncMethod(pure = true)
     int getValue();
 
-    @Writes
+    @AsyncMethod(pure = true)
     void fail();
 }

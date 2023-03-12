@@ -1,6 +1,6 @@
-package com.wellnr.platform.common;
+package com.wellnr.platform.common.async;
 
-import com.wellnr.platform.common.async.AsyncBoundaryProxy;
+import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.tuples.Done;
 import com.wellnr.platform.common.tuples.Tuple;
 import lombok.AllArgsConstructor;
@@ -56,7 +56,7 @@ class AsyncBoundaryProxyTest {
         test.add(5);
 
         var finalResult = Operators.compose(cs1, cs2, cs3, (d1, d2, d3) -> test.getValue()).toCompletableFuture().get();
-        assertEquals(finalResult, 0);
+        assertEquals(0, finalResult);
     }
 
     /*

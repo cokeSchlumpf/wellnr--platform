@@ -7,6 +7,12 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Writes {
+public @interface AsyncMethod {
+
+    /**
+     * If a method is set to `pure = true` it's expected that it doesn't change the state
+     * behind the async boundary.
+     */
+    boolean pure();
 
 }
