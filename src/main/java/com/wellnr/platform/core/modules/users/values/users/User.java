@@ -1,12 +1,23 @@
 package com.wellnr.platform.core.modules.users.values.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.modules.users.values.rbac.Permission;
 import com.wellnr.platform.core.modules.users.values.rbac.RoleAssignment;
 
 import java.util.Set;
 
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    property = "type")
+@JsonSubTypes(
+    {
+        @JsonSubTypes.Type(value = AnonymousUser.class, name = "anonymous"),
+        @JsonSubTypes.Type(value = AuthenticatedUser.class, name = "authenticated"),
+        @JsonSubTypes.Type(value = RegisteredUser.class, name = "registered"),
+    })
 public sealed interface User permits AnonymousUser, AuthenticatedUser, RegisteredUser {
 
     @JsonProperty("guid")

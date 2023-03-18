@@ -3,10 +3,7 @@ package com.wellnr.platform.core.modules.users.values.resources;
 import com.wellnr.platform.core.config.PlatformConfiguration;
 import com.wellnr.platform.core.modules.users.values.users.User;
 import io.javalin.http.Context;
-import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.OpenApi;
-import io.javalin.openapi.OpenApiContent;
-import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.*;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
@@ -20,6 +17,11 @@ public final class AboutResource {
         summary = "Current user information",
         description = "Display information of the currently logged in user. This endpoint is helpful to test login/ " +
             "authentication mechanisms.",
+        headers = @OpenApiParam(
+            name = "x-user-id",
+            description = "The user id of the authenticated user.",
+            allowEmptyValue = true
+        ),
         responses = {
             @OpenApiResponse(status = "200", description = "Current user information.", content = {
                 @OpenApiContent(from = UserInformation.class)

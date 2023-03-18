@@ -1,5 +1,6 @@
 package com.wellnr.platform.core.modules.users.entities;
 
+import com.wellnr.platform.common.async.AsyncMethod;
 import com.wellnr.platform.common.tuples.Done;
 import com.wellnr.platform.core.context.RootEntity;
 import com.wellnr.platform.core.modules.users.values.users.RegisteredUser;
@@ -15,7 +16,8 @@ public interface RegisteredUsersRootEntity extends RootEntity {
      * @param userId The id as sent by the identity provider.
      * @return The registered user or nothing.
      */
-    CompletionStage<Optional<RegisteredUser>> findUserByUserId(String userId);
+    @AsyncMethod(pure = true)
+    CompletionStage<Optional<RegisteredUser>> findByExternalUserId(String userId);
 
     /**
      * Create a new user account.
@@ -24,5 +26,6 @@ public interface RegisteredUsersRootEntity extends RootEntity {
      * @param displayName How the user wants to be displayed.
      * @return Done.
      */
+    @AsyncMethod(pure = false)
     CompletionStage<Done> registerUser(String userId, String displayName);
 }

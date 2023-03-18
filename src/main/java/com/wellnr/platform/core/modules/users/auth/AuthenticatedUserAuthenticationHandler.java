@@ -3,6 +3,7 @@ package com.wellnr.platform.core.modules.users.auth;
 import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.core.config.PlatformConfiguration;
 import com.wellnr.platform.core.context.PlatformContext;
+import com.wellnr.platform.core.modules.users.UsersModule;
 import com.wellnr.platform.core.modules.users.values.users.AnonymousUser;
 import com.wellnr.platform.core.modules.users.values.users.AuthenticatedUser;
 import com.wellnr.platform.core.modules.users.values.users.User;
@@ -44,8 +45,21 @@ public final class AuthenticatedUserAuthenticationHandler implements Authenticat
         return Operators
             .when(headers.containsKey(userIdHeaderName))
             .then(() -> {
-                var userId = headers.get(userIdHeaderName);
-                return (User) AuthenticatedUser.apply(userId, List.of());
+                var externalUserId = headers.get(userIdHeaderName);
+                var registeredUsers = context
+                    .getModule(UsersModule.class)
+                    .getRegisteredUsers();
+
+                var maybeRegisteredUser = registeredUsers
+                    .findByExternalUserId(externalUserId)
+                    .toCompletableFuture()
+                    .get();
+
+                if (maybeRegisteredUser.isPresent()) {
+                    return maybeRegisteredUser.get();
+                } else {
+                    return AuthenticatedUser.apply(externalUserId, List.of());
+                }
             })
             .otherwise(() -> AnonymousUser.apply(List.of()));
     }

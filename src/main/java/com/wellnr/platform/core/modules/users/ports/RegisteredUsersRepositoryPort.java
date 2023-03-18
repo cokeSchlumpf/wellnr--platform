@@ -15,7 +15,7 @@ public interface RegisteredUsersRepositoryPort {
 
     CompletionStage<Optional<RegisteredUser>> findOneRegisteredUserByGUID(GUID id);
 
-    CompletionStage<Optional<RegisteredUser>> findOneRegisteredUserByUserId(String id);
+    CompletionStage<Optional<RegisteredUser>> findOneRegisteredUserByExternalUserId(String id);
 
     default CompletionStage<RegisteredUser> getRegisteredUserById(GUID id) {
         return findOneRegisteredUserByGUID(id).thenApply(maybeUser ->

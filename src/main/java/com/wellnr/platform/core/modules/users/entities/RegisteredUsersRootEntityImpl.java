@@ -16,24 +16,27 @@ import java.util.concurrent.CompletionStage;
 @AllArgsConstructor(staticName = "apply")
 public final class RegisteredUsersRootEntityImpl implements RegisteredUsersRootEntity {
 
+    public static final GUID ENTITIES_GUID = GUID.fromString(MessageFormat.format(
+        "{0}/registered-users",
+        UsersModule.GUID_PREFIX
+    ));
+
     RegisteredUsersRepositoryPort repository;
 
     @Override
     public GUID getGUID() {
-        return GUID.apply(MessageFormat.format(
-            "{0}/entities/registered-users", UsersModule.GUID_PREFIX
-        ));
+        return ENTITIES_GUID;
     }
 
     @Override
-    public CompletionStage<Optional<RegisteredUser>> findUserByUserId(String userId) {
-        return repository.findOneRegisteredUserByUserId(userId);
+    public CompletionStage<Optional<RegisteredUser>> findByExternalUserId(String externalUserId) {
+        return repository.findOneRegisteredUserByExternalUserId(externalUserId);
     }
 
     @Override
     public CompletionStage<Done> registerUser(String userId, String displayName) {
         return repository
-            .findOneRegisteredUserByUserId(userId)
+            .findOneRegisteredUserByExternalUserId(userId)
             .thenCompose(maybeUser -> {
                 if (maybeUser.isPresent()) {
                     throw UserAlreadyRegisteredException.byUserId(userId);

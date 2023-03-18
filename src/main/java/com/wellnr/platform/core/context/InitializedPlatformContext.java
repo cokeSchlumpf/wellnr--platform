@@ -1,12 +1,15 @@
 package com.wellnr.platform.core.context;
 
 import com.google.common.collect.Maps;
+import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.async.AsyncBoundaryProxy;
 import com.wellnr.platform.common.functions.Function0;
+import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
+import com.wellnr.platform.core.persistence.Operations;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -110,13 +113,13 @@ final class InitializedPlatformContext implements PlatformContextInternal {
 
     @Override
     @SuppressWarnings("unchecked")
-    public synchronized <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function0<T> createInstance) {
+    public synchronized <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function1<GUID, T> createInstance) {
         if (!this.entities.containsKey(guid)) {
-            var entity = createInstance.get();
+            var entity = createInstance.get(guid);
 
             if (!entity.getGUID().equals(guid)) {
                 throw new IllegalStateException(MessageFormat.format(
-                    "Returned entity must have the specified GUID `{}`", guid
+                    "Returned entity must have the specified GUID `{0}`", guid
                 ));
             }
 
@@ -127,14 +130,39 @@ final class InitializedPlatformContext implements PlatformContextInternal {
         var entity = this.entities.get(guid);
 
         if (!entityType.isInstance(entity)) {
-            throw new IllegalArgumentException(String.format(
-                "Another entity with entity GUID `{}`, but with different type `{}` " +
+            throw new IllegalArgumentException(MessageFormat.format(
+                "Another entity with entity GUID `{0}`, but with different type `{1}` " +
                 "has been already registered. Please ensure that GUID of different entity types do not overlap.",
                 guid, entity.getClass().getName()
             ));
         }
 
         return (T) entity;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, Function0<T> createInstance) {
+        var maybeExistingEntity = this
+            .entities
+            .values()
+            .stream()
+            .filter(entityType::isInstance)
+            .findFirst();
+
+        return Operators
+            .when(maybeExistingEntity.isEmpty())
+            .then(() -> {
+                var entity = createInstance.get();
+                var asyncEntity = AsyncBoundaryProxy.createProxy(entity, entityType);
+
+                this.entities.put(entity.getGUID(), asyncEntity);
+
+                return asyncEntity;
+            })
+            .otherwise(
+                () -> (T) maybeExistingEntity.orElseThrow()
+            );
     }
 
     @Override

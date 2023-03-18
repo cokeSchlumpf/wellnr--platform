@@ -1,7 +1,6 @@
 package com.wellnr.platform.core.modules.users;
 
 import com.wellnr.platform.common.Operators;
-import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.config.RepositoryMode;
 import com.wellnr.platform.core.context.PlatformContext;
 import com.wellnr.platform.core.modules.PlatformModule;
@@ -15,7 +14,6 @@ import com.wellnr.platform.core.modules.users.entities.RegisteredUsersRootEntity
 import com.wellnr.platform.core.modules.users.ports.RegisteredUsersRepositoryPort;
 import com.wellnr.platform.core.modules.users.values.resources.AboutResource;
 import com.wellnr.platform.core.modules.users.values.users.RegisteredUser;
-import com.wellnr.platform.core.modules.users.values.users.User;
 import com.wellnr.platform.core.persistence.inmemory.InMemoryRepository;
 import com.wellnr.platform.core.persistence.mongo.MongoRepository;
 import io.javalin.Javalin;
@@ -31,17 +29,14 @@ public class UsersModule implements PlatformModule {
 
     private final PlatformContext context;
 
-    private final UsersConfiguration configuration;
-
     public static UsersModule apply(
         PlatformContext context,
-        UsersConfiguration configuration,
         RegisteredUsersRepositoryPort usersRepository
     ) {
         // add to context to enable injection later.
         context.withSingletonInstance(usersRepository, RegisteredUsersRepositoryPort.class);
 
-        return new UsersModule(context, configuration);
+        return new UsersModule(context);
     }
 
     public static UsersModule apply(PlatformContext context) {
@@ -60,7 +55,7 @@ public class UsersModule implements PlatformModule {
                 )
             );
 
-        return apply(context, config, repo);
+        return apply(context, repo);
     }
 
     @Override
@@ -83,8 +78,6 @@ public class UsersModule implements PlatformModule {
                 ctx.attribute("user", user);
             })
             .get("/api/users/about", about::getAbout);
-
-        System.out.println(context.createFromContext(RegisteredUsersRootEntityImpl.class));
     }
 
     @Override
@@ -97,10 +90,9 @@ public class UsersModule implements PlatformModule {
         return 0;
     }
 
-    public RegisteredUsersRootEntity getUsers() {
+    public RegisteredUsersRootEntity getRegisteredUsers() {
         return context.getOrCreateEntity(
             RegisteredUsersRootEntity.class,
-            GUID.apply(GUID_PREFIX),
             () -> context.createFromContext(RegisteredUsersRootEntityImpl.class));
     }
 }

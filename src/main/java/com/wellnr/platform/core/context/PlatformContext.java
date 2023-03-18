@@ -1,16 +1,17 @@
 package com.wellnr.platform.core.context;
 
+import com.google.common.collect.Maps;
 import com.wellnr.platform.common.functions.Function0;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
+import com.wellnr.platform.common.tuples.Tuple2;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
 import org.apache.commons.lang3.NotImplementedException;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public interface PlatformContext {
 
@@ -20,22 +21,19 @@ public interface PlatformContext {
 
     /**
      * Initializes the context (and the application).
-     *
-     * @return The platform context instance.
      */
-    default  PlatformContext initialize() {
-        return this;
+    default void initialize() {
     }
 
     /**
      * Get the singleton entity instance for a given "plain" entity. The context will return the entity (or
      * a previous registered entity with the same identity) wrapped within an
      * {@link com.wellnr.platform.common.async.AsyncBoundaryProxy}.
-     *
+     * <p>
      * This ensures that calls to an entity do never overlap and consistency of an entity is ensured.
      *
-     * @param <T> The type of the entity.
-     * @param entityType The type if the entity.
+     * @param <T>         The type of the entity.
+     * @param entityType  The type if the entity.
      * @param plainEntity The plain entity instance.
      * @return The entity singleton.
      */
@@ -56,12 +54,13 @@ public interface PlatformContext {
      * Register a platform module during initialisation of the application.
      *
      * @param module The module to be registered.
-     * @param clazz The type of the module.
+     * @param clazz  The type of the module.
      * @return The instance of the platform context to chain calls.
      */
     <T extends PlatformModule> PlatformContext withModule(T module, Class<T> clazz);
 
-    default <T extends PlatformModule> PlatformContext withModuleFromContext(Function1<PlatformContext, T> module, Class<T> clazz) {
+    default <T extends PlatformModule> PlatformContext withModuleFromContext(Function1<PlatformContext, T> module,
+                                                                             Class<T> clazz) {
         return withModule(module.get(this), clazz);
     }
 
@@ -99,7 +98,30 @@ public interface PlatformContext {
      */
     List<PlatformModule> getModules();
 
-    <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function0<T> createInstance);
+    /**
+     * Get or create a specific entity instance.
+     * <p>
+     * Use this variant for entity types which might be instantiated multiple times.
+     *
+     * @param entityType     The type of the entity.
+     * @param guid           The unique guid of the entity instance.
+     * @param createInstance A function to create the entity if it does not exist.
+     * @param <T>            The type of the entity.
+     * @return The singleton entity instance.
+     */
+    <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function1<GUID, T> createInstance);
+
+    /**
+     * Get or create a singleton entity instance.
+     * <p>
+     * Use this variant for entity types which should only exist exactly once within the system.
+     *
+     * @param entityType     The type of the entity.
+     * @param createInstance A function to create the entity if it does not exist.
+     * @param <T>            The type of the entity.
+     * @return The singleton entity instance.
+     */
+    <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, Function0<T> createInstance);
 
     /**
      * Get all available roles which have been registered in the platform instance.
@@ -109,12 +131,71 @@ public interface PlatformContext {
     Set<Role> getRoles();
 
     /**
-     * @param <T>
-     * @param classToCreate
-     * @return
+     * Creates a class instance by injecting instances from context and additionalContext.
+     * <p>
+     * The function searches for a factory method within the class and tries to call this method. Possible arguments
+     * are searched within context and within additionalContext (preferred over context).
+     *
+     * @param <T>               The type of the created class.
+     * @param classToCreate     The type of the created class.
+     * @param additionalContext A map with additional arguments for values which are not available in context or
+     *                          should be taken in preference of context values.
+     * @return A newly created instance.
      */
-    default <T> T createFromContext(Class<T> classToCreate) {
+    default <T> T createFromContextWithArgs(
+        Class<? extends T> classToCreate,
+        Map<Class<?>, Object> additionalContext) {
+
         throw new NotImplementedException();
+    }
+
+    /**
+     * Creates a class instance by injecting instances from context and additionalContext.
+     * <p>
+     * The function searches for a factory method within the class and tries to call this method. Possible arguments
+     * are searched within context and within additionalContext (preferred over context).
+     *
+     * @param <T>               The type of the created class.
+     * @param classToCreate     The type of the created class.
+     * @param additionalContext A map with additional arguments for values which are not available in context or
+     *                          should be taken in preference of context values.
+     * @return A newly created instance.
+     */
+    @SuppressWarnings("unchecked")
+    default <T> T createFromContextWithArgs(
+        Class<? extends T> classToCreate,
+        Tuple2<Class<?>, Object>... additionalContext) {
+
+        var additional = Arrays
+            .stream(additionalContext)
+            .collect(Collectors.<Tuple2<Class<?>, Object>, Class<?>, Object>toMap(
+                t -> t._1,
+                Tuple2::get_2
+            ));
+
+        return createFromContext(classToCreate, additional);
+    }
+
+    /**
+     * Creates a class instance by injecting instances from context and additionalContext.
+     * <p>
+     * The function searches for a factory method within the class and tries to call this method. Possible arguments
+     * are searched within context and within additionalContext (preferred over context).
+     *
+     * @param <T>               The type of the created class.
+     * @param classToCreate     The type of the created class.
+     * @param additionalContext A map with additional arguments for values which are not available in context or
+     *                          should be taken in preference of context values.
+     * @return A newly created instance.
+     */
+    default <T> T createFromContext(Class<? extends T> classToCreate, Object... additionalContext) {
+        var map = Maps.<Class<?>, Object>newHashMap();
+
+        Arrays
+            .stream(additionalContext)
+            .forEach(o -> map.put(o.getClass(), o));
+
+        return createFromContextWithArgs(classToCreate, map);
     }
 
     /**
@@ -137,11 +218,8 @@ public interface PlatformContext {
 
     /**
      * Initializes the context (and the application).
-     *
-     * @return The platform context instance.
      */
-    default  PlatformContext stop() {
-        return this;
+    default void stop() {
     }
 
 }

@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.ReflectionUtils;
 import com.wellnr.platform.common.functions.Function0;
+import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.config.PlatformConfiguration;
@@ -32,7 +33,57 @@ final class PlatformContextImpl implements PlatformContext {
     }
 
     @Override
-    public synchronized PlatformContext initialize() {
+    @SuppressWarnings("unchecked")
+    public <T> T createFromContextWithArgs(Class<? extends T> classToCreate, Map<Class<?>, Object> additionalContext) {
+        /*
+         * Find a suitable factory method.
+         */
+        var annotatedFactory = ReflectionUtils.getMethod(
+            classToCreate, CreateFromContextCreator.class, classToCreate, m -> Modifier.isStatic(m.getModifiers())
+        );
+
+        var defaultFactory = ReflectionUtils.getMethod(
+            classToCreate, null, classToCreate, m -> Modifier.isStatic(m.getModifiers()) && m.getName().equals("apply")
+        );
+
+        var factory = annotatedFactory.orElse(defaultFactory.orElseThrow(
+            () -> new IllegalArgumentException(MessageFormat.format(
+                "The class `{0}` does not provide a suitable factory method. Please specify a static factory method " +
+                    "with name `apply` or annotate another factory method with `@CreateFromContextCreator`.",
+                classToCreate.getName()
+            ))
+        ));
+
+        /*
+         * Check whether
+         */
+        var parameters = Arrays
+            .stream(factory.getParameters())
+            .map(param -> {
+                var valueFromContext = this.findInstance(param.getType());
+                var valueFromAdditionalContext = Optional.ofNullable(additionalContext.get(param.getType()));
+
+                var value = Optional.ofNullable(
+                    valueFromAdditionalContext.orElseGet(() -> valueFromContext.orElse(null))
+                );
+
+                if (value.isPresent()) {
+                    return value.get();
+                } else {
+                    throw new IllegalArgumentException(MessageFormat.format(
+                        "Unable to create instance for class `{0}`. Did not find a suitable value for parameter `{1}`" +
+                            " of type `{2}` within context.",
+                        classToCreate.getName(), param.getName(), param.getType()
+                    ));
+                }
+            })
+            .toArray();
+
+        return (T) Operators.suppressExceptions(() -> factory.invoke(null, parameters));
+    }
+
+    @Override
+    public synchronized void initialize() {
         if (delegate instanceof InitializingPlatformContext init) {
             var commands = Sets.<Class<Command>>newHashSet();
             var roles = Sets.<Role>newHashSet();
@@ -60,7 +111,6 @@ final class PlatformContextImpl implements PlatformContext {
                 init.instances, init.modules, commands, roles
             );
 
-            return this;
         } else {
             throw new IllegalStateException("`initialize` cannot be called after initialization.");
         }
@@ -99,53 +149,13 @@ final class PlatformContextImpl implements PlatformContext {
     }
 
     @Override
-    public <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function0<T> createInstance) {
+    public <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function1<GUID, T> createInstance) {
         return delegate.getOrCreateEntity(entityType, guid, createInstance);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T createFromContext(Class<T> classToCreate) {
-        /*
-         * Find a suitable factory method.
-         */
-        var annotatedFactory = ReflectionUtils.getMethod(
-            classToCreate, CreateFromContextCreator.class, classToCreate, m -> Modifier.isStatic(m.getModifiers())
-        );
-
-        var defaultFactory = ReflectionUtils.getMethod(
-            classToCreate, null, classToCreate, m -> Modifier.isStatic(m.getModifiers()) && m.getName().equals("apply")
-        );
-
-        var factory = annotatedFactory.orElse(defaultFactory.orElseThrow(
-            () -> new IllegalArgumentException(MessageFormat.format(
-                "The class `{0}` does not provide a suitable factory method. Please specify a static factory method " +
-                    "with name `apply` or annotate another factory method with `@CreateFromContextCreator`.",
-                classToCreate.getName()
-            ))
-        ));
-
-        /*
-         * Check whether
-         */
-        var parameters = Arrays
-            .stream(factory.getParameters())
-            .map(param -> {
-                var value = this.findInstance(param.getType());
-
-                if (value.isPresent()) {
-                    return value.get();
-                } else {
-                    throw new IllegalArgumentException(MessageFormat.format(
-                        "Unable to create instance for class `{0}`. Did not find a suitable value for parameter `{1}`" +
-                            " of type `{2}` within context.",
-                        classToCreate.getName(), param.getName(), param.getType()
-                    ));
-                }
-            })
-            .toArray();
-
-        return (T) Operators.suppressExceptions(() -> factory.invoke(null, parameters));
+    public <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, Function0<T> createInstance) {
+        return delegate.getOrCreateEntity(entityType, createInstance);
     }
 
     @Override
@@ -184,7 +194,7 @@ final class PlatformContextImpl implements PlatformContext {
     }
 
     @Override
-    public PlatformContext stop() {
+    public void stop() {
         var config = this.getInstance(PlatformConfiguration.class);
         var server = this.getInstance(Javalin.class);
 
@@ -203,6 +213,5 @@ final class PlatformContextImpl implements PlatformContext {
 
         LOG.info("{} has stopped", config.getName());
 
-        return this;
     }
 }

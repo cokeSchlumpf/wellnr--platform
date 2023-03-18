@@ -2,6 +2,7 @@ package com.wellnr.platform.core.context;
 
 import com.google.common.collect.Maps;
 import com.wellnr.platform.common.functions.Function0;
+import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
@@ -57,7 +58,12 @@ final class InitializingPlatformContext implements PlatformContextInternal {
     }
 
     @Override
-    public <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function0<T> createInstance) {
+    public <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function1<GUID, T> createInstance) {
+        throw new IllegalStateException("`getOrCreateEntity` must not be called during system initialization.");
+    }
+
+    @Override
+    public <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, Function0<T> createInstance) {
         throw new IllegalStateException("`getOrCreateEntity` must not be called during system initialization.");
     }
 
