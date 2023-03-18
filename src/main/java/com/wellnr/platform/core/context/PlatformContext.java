@@ -1,10 +1,14 @@
 package com.wellnr.platform.core.context;
 
+import com.wellnr.platform.common.functions.Function0;
+import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
+import org.apache.commons.lang3.NotImplementedException;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -57,6 +61,10 @@ public interface PlatformContext {
      */
     <T extends PlatformModule> PlatformContext withModule(T module, Class<T> clazz);
 
+    default <T extends PlatformModule> PlatformContext withModuleFromContext(Function1<PlatformContext, T> module, Class<T> clazz) {
+        return withModule(module.get(this), clazz);
+    }
+
     /**
      * Register a platform module during initialisation of the application.
      *
@@ -85,11 +93,29 @@ public interface PlatformContext {
     <T extends PlatformModule> T getModule(Class<T> clazz);
 
     /**
+     * Returns a list of all registered modules.
+     *
+     * @return The list of registered modules.
+     */
+    List<PlatformModule> getModules();
+
+    <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function0<T> createInstance);
+
+    /**
      * Get all available roles which have been registered in the platform instance.
      *
      * @return The set of available roles.
      */
     Set<Role> getRoles();
+
+    /**
+     * @param <T>
+     * @param classToCreate
+     * @return
+     */
+    default <T> T createFromContext(Class<T> classToCreate) {
+        throw new NotImplementedException();
+    }
 
     /**
      * Returns a Role by its GUID, if it exists.
@@ -105,6 +131,17 @@ public interface PlatformContext {
      * @param <T>   The type of the value.
      * @return The value, if registered.
      */
-    <T> T getInstance(Class<T> clazz);
+    default <T> T getInstance(Class<T> clazz) {
+        throw new NotImplementedException();
+    }
+
+    /**
+     * Initializes the context (and the application).
+     *
+     * @return The platform context instance.
+     */
+    default  PlatformContext stop() {
+        return this;
+    }
 
 }

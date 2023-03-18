@@ -2,6 +2,7 @@ package com.wellnr.platform.core.context;
 
 import com.google.common.collect.Maps;
 import com.wellnr.platform.common.async.AsyncBoundaryProxy;
+import com.wellnr.platform.common.functions.Function0;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
@@ -12,16 +13,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-final class InitializedPlatformContext implements PlatformContext {
+final class InitializedPlatformContext implements PlatformContextInternal {
 
     private static final Logger LOG = LoggerFactory.getLogger(PlatformContext.class);
 
-    private final Map<Class<?>, Object> values;
+    private final Map<Class<?>, Object> instances;
 
     private final Map<Class<? extends PlatformModule>, PlatformModule> modules;
 
@@ -51,7 +53,8 @@ final class InitializedPlatformContext implements PlatformContext {
                 return (T) existingEntity;
             } else {
                 throw new IllegalArgumentException(MessageFormat.format(
-                    "Entity with GUID `{0}` already exists, but with different type. Existing type: `{1}`, requested type: `{2}``",
+                    "Entity with GUID `{0}` already exists, but with different type. Existing type: `{1}`, requested " +
+                        "type: `{2}``",
                     plainEntity.getGUID(), existingEntity.getClass(), entityType
                 ));
             }
@@ -101,6 +104,40 @@ final class InitializedPlatformContext implements PlatformContext {
     }
 
     @Override
+    public List<PlatformModule> getModules() {
+        return List.copyOf(modules.values());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function0<T> createInstance) {
+        if (!this.entities.containsKey(guid)) {
+            var entity = createInstance.get();
+
+            if (!entity.getGUID().equals(guid)) {
+                throw new IllegalStateException(MessageFormat.format(
+                    "Returned entity must have the specified GUID `{}`", guid
+                ));
+            }
+
+            var asyncEntity = AsyncBoundaryProxy.createProxy(entity, entityType);
+            this.entities.put(guid, asyncEntity);
+        }
+
+        var entity = this.entities.get(guid);
+
+        if (!entityType.isInstance(entity)) {
+            throw new IllegalArgumentException(String.format(
+                "Another entity with entity GUID `{}`, but with different type `{}` " +
+                "has been already registered. Please ensure that GUID of different entity types do not overlap.",
+                guid, entity.getClass().getName()
+            ));
+        }
+
+        return (T) entity;
+    }
+
+    @Override
     public Set<Role> getRoles() {
         return this.roles;
     }
@@ -114,14 +151,7 @@ final class InitializedPlatformContext implements PlatformContext {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T getInstance(Class<T> clazz) {
-        if (values.containsKey(clazz) && clazz.isInstance(values.get(clazz))) {
-            return (T) values.get(clazz);
-        } else {
-            throw new IllegalArgumentException(MessageFormat.format(
-                "No module registered for type `{0}`", clazz.getName()
-            ));
-        }
+    public Map<Class<?>, Object> getInstances() {
+        return this.instances;
     }
 }

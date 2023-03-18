@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.hash.Hashing;
 import com.wellnr.platform.common.databind.DefaultObjectMapperFactory;
 import com.wellnr.platform.common.functions.*;
+import com.wellnr.platform.common.tuples.When;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 
@@ -364,6 +365,10 @@ public final class Operators {
                 }
             }
         }
+    }
+
+    public static When.IncompleteWhen when(boolean condition) {
+        return When.IncompleteWhen.apply(condition);
     }
 
     @FunctionalInterface

@@ -1,5 +1,6 @@
 package com.wellnr.platform.core.modules.users.values.users;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.modules.users.values.rbac.Permission;
 import com.wellnr.platform.core.modules.users.values.rbac.RoleAssignment;
@@ -8,6 +9,7 @@ import java.util.Set;
 
 public sealed interface User permits AnonymousUser, AuthenticatedUser, RegisteredUser {
 
+    @JsonProperty("guid")
     GUID getGUID();
 
     /**
@@ -15,6 +17,7 @@ public sealed interface User permits AnonymousUser, AuthenticatedUser, Registere
      *
      * @return The list of roles.
      */
+    @JsonProperty("roles")
     Set<RoleAssignment> getRoles();
 
     /**

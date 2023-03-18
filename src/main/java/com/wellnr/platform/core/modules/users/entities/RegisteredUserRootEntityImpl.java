@@ -27,7 +27,7 @@ public final class RegisteredUserRootEntityImpl implements RegisteredUserRootEnt
             .getRegisteredUserById(guid)
             .thenCompose(user -> {
                 user = user.withDisplayName(displayName);
-                return repository.updateOrInsertRegisteredUser(user);
+                return repository.insertOrUpdateRegisteredUser(user);
             });
     }
 

@@ -16,7 +16,7 @@ import java.util.Objects;
 
 /**
  * Configure a connection to a Mongo Database.
- *
+ * <p>
  * Either <code>connection-properties</code> or <code>connection-string</code> must be set.
  */
 @Getter
@@ -28,7 +28,7 @@ public class MongoDatabaseConfiguration {
     /**
      * The name of the database to be used.
      */
-    @Value("databaseName")
+    @Value("database-name")
     String databaseName;
 
     /**
@@ -48,7 +48,7 @@ public class MongoDatabaseConfiguration {
     /**
      * Creates a new instance from connection properties.
      *
-     * @param databaseName See {@link MongoDatabaseConfiguration#databaseName}.
+     * @param databaseName         See {@link MongoDatabaseConfiguration#databaseName}.
      * @param connectionProperties See {@link MongoDatabaseConfiguration#connectionProperties}.
      * @return A new instance.
      */
@@ -59,7 +59,7 @@ public class MongoDatabaseConfiguration {
     /**
      * Creates a new instance form connection string.
      *
-     * @param databaseName See {@link MongoDatabaseConfiguration#databaseName}.
+     * @param databaseName     See {@link MongoDatabaseConfiguration#databaseName}.
      * @param connectionString See {@link MongoDatabaseConfiguration#connectionString}.
      * @return A new instance.
      */

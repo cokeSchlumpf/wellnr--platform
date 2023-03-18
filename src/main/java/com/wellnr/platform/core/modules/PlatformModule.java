@@ -2,7 +2,6 @@ package com.wellnr.platform.core.modules;
 
 import com.google.common.collect.Maps;
 import com.wellnr.platform.core.commands.Command;
-import com.wellnr.platform.core.context.PlatformContext;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
 
 import java.util.Map;
@@ -23,16 +22,14 @@ public interface PlatformModule {
     String getName();
 
     /**
-     * Will be called during start-up of Maquette.
-     *
-     * @param runtime The initialized Maquette runtime configuration.
+     * Will be called during start-up of Platform.
      */
-    default void init(PlatformContext runtime) {
+    default void init() {
         // do nothing by default
     }
 
     /**
-     * Will be called during shutdown of Maquette.
+     * Will be called during shutdown of Platform.
      */
     default void stop() {
         // do nothing by default
@@ -49,6 +46,18 @@ public interface PlatformModule {
      */
     default Set<Role> getRoles() {
         return Set.of();
+    }
+
+    /**
+     * Returns a numeric value which will be used to define initialisation order of modules.
+     *
+     * By default, core modules are set to `0`. Custom modules to `10`. This ensures that core modules
+     * are initialized before custom modules without specifying separate dependencies.
+     *
+     * @return The numeric value.
+     */
+    default int getInitStage() {
+        return 10;
     }
 
 }

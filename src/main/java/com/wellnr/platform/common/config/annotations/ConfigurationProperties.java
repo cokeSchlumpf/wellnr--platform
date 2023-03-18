@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 
 /**
  * This annotation can be used to annotate configuration class for
- * {@link maquette.core.config.Configs#mapToConfigClass(Class, Config)}.
+ * {@link com.wellnr.platform.common.config.Configs#mapToConfigClass(Class, Config)}.
  *
  * @author Michael Wellner (michael.wellner@gmail.com).
  */

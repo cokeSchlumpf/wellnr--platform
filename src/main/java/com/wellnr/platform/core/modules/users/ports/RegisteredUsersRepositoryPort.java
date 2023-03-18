@@ -11,18 +11,18 @@ import java.util.concurrent.CompletionStage;
 
 public interface RegisteredUsersRepositoryPort {
 
-    CompletionStage<List<RegisteredUser>> findRegisteredUsersByUsername(String username);
+    CompletionStage<List<RegisteredUser>> findAllRegisteredUsersByUsername(String username);
 
-    CompletionStage<Optional<RegisteredUser>> findRegisteredUserByGUID(GUID id);
+    CompletionStage<Optional<RegisteredUser>> findOneRegisteredUserByGUID(GUID id);
 
-    CompletionStage<Optional<RegisteredUser>> findRegisteredUserByUserId(String id);
+    CompletionStage<Optional<RegisteredUser>> findOneRegisteredUserByUserId(String id);
 
     default CompletionStage<RegisteredUser> getRegisteredUserById(GUID id) {
-        return findRegisteredUserByGUID(id).thenApply(maybeUser ->
+        return findOneRegisteredUserByGUID(id).thenApply(maybeUser ->
             maybeUser.orElseThrow(() -> UserNotFoundException.byGUID(id))
         );
     }
 
-    CompletionStage<Done> updateOrInsertRegisteredUser(RegisteredUser user);
+    CompletionStage<Done> insertOrUpdateRegisteredUser(RegisteredUser user);
 
 }

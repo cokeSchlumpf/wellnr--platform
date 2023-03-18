@@ -42,7 +42,7 @@ public final class Configs {
     public static final String ENV_WELLNR_ENVIRONMENT = "WELLNR_ENVIRONMENT";
 
     /**
-     * The name of the system variable which is used to store the role of the Maquette instance
+     * The name of the system variable which is used to store the role of the Platform instance
      */
     public static final String SYS_WELLNR_ROLE = "wellnr.role";
 
@@ -161,7 +161,7 @@ public final class Configs {
      * Returns a config object in a human-readable string.
      *
      * @param config The config object to print
-     * @return A human readable string including all config values.
+     * @return A human-readable string including all config values.
      */
     public static String asString(Config config) {
         return asString(config, true);
@@ -172,7 +172,7 @@ public final class Configs {
      *
      * @param config     The config object to print
      * @param obfuscated Whether secrets should be obfuscated.
-     * @return A human readable string including all config values.
+     * @return A human-readable string including all config values.
      */
     public static String asString(Config config, boolean obfuscated) {
         StringBuilder sb = new StringBuilder();
@@ -228,6 +228,7 @@ public final class Configs {
      * @param <T>         The type of the POJO.
      * @return The type of the POJO.
      */
+    @SuppressWarnings("unchecked")
     public static <T> T mapToConfigClass(Class<T> configClass, Config config) {
         try {
             LOG.debug(String.format("Instantiating class '%s' and expanding configuration values.",
@@ -288,11 +289,6 @@ public final class Configs {
                             value = Optional.of(config.getLong(configPath));
                         } else if (field
                             .getType()
-                            .equals(Object.class)) {
-                            // Object
-                            value = Optional.of(config.getAnyRef(configPath));
-                        } else if (field
-                            .getType()
                             .equals(Number.class)) {
                             // Number
                             value = Optional.of(config.getNumber(configPath));
@@ -311,6 +307,14 @@ public final class Configs {
                             .equals(TemporalAmount.class)) {
                             // TemporalAmount
                             value = Optional.of(config.getTemporal(configPath));
+                        } else if (field
+                            .getType()
+                            .equals(Object.class)) {
+                            // Object
+                            value = Optional.of(config.getAnyRef(configPath));
+                        } else if (Enum.class.isAssignableFrom(field.getType())) {
+                            // Enum
+                            value = Optional.of(config.getEnum((Class<Enum>) field.getType(), configPath));
                         } else if (field
                             .getType()
                             .getAnnotation(ConfigurationProperties.class) != null) {

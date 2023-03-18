@@ -1,5 +1,6 @@
-package com.wellnr.platform.common.config;
+package com.wellnr.platform.core.config;
 
+import com.wellnr.platform.common.config.Configs;
 import com.wellnr.platform.common.config.annotations.ConfigurationProperties;
 import com.wellnr.platform.common.config.annotations.Value;
 import lombok.AccessLevel;
@@ -11,7 +12,19 @@ import lombok.NoArgsConstructor;
 @ConfigurationProperties
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
 @AllArgsConstructor(staticName = "apply")
-public class CoreConfiguration {
+public class PlatformConfiguration {
+
+    @Value("name")
+    String name;
+
+    @Value("version")
+    String version;
+
+    @Value("environment")
+    String environment;
+
+    @Value("description")
+    String description;
 
     /**
      * The name of the resource which includes the banner template shown in startup.
@@ -20,13 +33,13 @@ public class CoreConfiguration {
     String banner;
 
     /**
-     * The port where Maquette API should listen.
+     * The port where Platform API should listen.
      */
     @Value("port")
     int port;
 
     /**
-     * The hostname where Maquette API should listen.
+     * The hostname where Platform API should listen.
      */
     @Value("host")
     String host;
@@ -62,12 +75,6 @@ public class CoreConfiguration {
     String applicationSecretHeaderName;
 
     /**
-     * The applications root Url for the outside world.
-     */
-    @Value("rootURL")
-    String rootURL;
-
-    /**
      * The HTTP header name which may contain the id of the authentication token.
      */
     @Value("auth-token-id-header-name")
@@ -78,5 +85,9 @@ public class CoreConfiguration {
      */
     @Value("auth-token-secret-header-name")
     String authTokenSecretHeaderName;
+
+    public static PlatformConfiguration apply() {
+        return Configs.mapToConfigClass(PlatformConfiguration.class, "platform");
+    }
 
 }

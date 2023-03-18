@@ -4,7 +4,9 @@ import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.tuples.Tuple;
 import com.wellnr.platform.common.tuples.Tuple2;
 
+import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Objects;
@@ -17,14 +19,56 @@ public final class ReflectionUtils {
     }
 
     /**
+     * Find a method by given criteria.
+     *
+     * @param type               The type to analyse.
+     * @param annotation         Optional. An annotation class with which the method should be annotated.
+     * @param expectedReturnType Optional. The expected return type of the method.
+     * @param additionalCheck    Optional. An additional filter operation to select a method.
+     * @return A method matching the criteria if found.
+     */
+    public static Optional<Method> getMethod(
+        Class<?> type,
+        @Nullable Class<? extends Annotation> annotation,
+        @Nullable Class<?> expectedReturnType,
+        @Nullable Function1<Method, Boolean> additionalCheck) {
+
+        return Arrays
+            .stream(type.getDeclaredMethods())
+            .filter(m -> {
+                if (Objects.nonNull(annotation)) {
+                    return Objects.nonNull(m.getAnnotation(annotation));
+                } else {
+                    return true;
+                }
+            })
+            .filter(m -> {
+                if (Objects.nonNull(expectedReturnType)) {
+                    return expectedReturnType.isAssignableFrom(m.getReturnType());
+                } else {
+                    return true;
+                }
+            })
+            .filter(m -> {
+                if (Objects.nonNull(additionalCheck)) {
+                    return additionalCheck.get(m);
+                } else {
+                    return true;
+                }
+            })
+            .findFirst();
+    }
+
+    /**
      * Checks field or related getter for existence of an annotation.
      *
-     * @param type The type to analyze.
+     * @param type  The type to analyze.
      * @param field The field name.
+     * @param <T>   The type of the annotation.
      * @return The annotation instance if found.
-     * @param <T> The type of the annotation.
      */
-    public static <T extends Annotation> Optional<T> getAnnotationForField(Class<?> type, String field, Class<T> annotationType) {
+    public static <T extends Annotation> Optional<T> getAnnotationForField(Class<?> type, String field,
+                                                                           Class<T> annotationType) {
         var maybeFieldAnnotation = Arrays
             .stream(type.getDeclaredFields())
             .filter(f -> f.getName().equalsIgnoreCase(field))
@@ -92,8 +136,8 @@ public final class ReflectionUtils {
      * of the function.
      *
      * @param field The field name (no nested path). Field must be direct field of `type`.
-     * @param type The type from which a field should be read.
-     * @param <U> The object type to read a value from.
+     * @param type  The type from which a field should be read.
+     * @param <U>   The object type to read a value from.
      * @return A function to read a value from object of type U and the corresponding response type.
      */
     private static <U> Tuple2<Function1<U, Object>, Class<?>> getValueGetterForClass(String field, Class<U> type) {

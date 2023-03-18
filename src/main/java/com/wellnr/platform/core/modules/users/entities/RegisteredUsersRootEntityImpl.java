@@ -27,13 +27,13 @@ public final class RegisteredUsersRootEntityImpl implements RegisteredUsersRootE
 
     @Override
     public CompletionStage<Optional<RegisteredUser>> findUserByUserId(String userId) {
-        return repository.findRegisteredUserByUserId(userId);
+        return repository.findOneRegisteredUserByUserId(userId);
     }
 
     @Override
     public CompletionStage<Done> registerUser(String userId, String displayName) {
         return repository
-            .findRegisteredUserByUserId(userId)
+            .findOneRegisteredUserByUserId(userId)
             .thenCompose(maybeUser -> {
                 if (maybeUser.isPresent()) {
                     throw UserAlreadyRegisteredException.byUserId(userId);
@@ -41,7 +41,7 @@ public final class RegisteredUsersRootEntityImpl implements RegisteredUsersRootE
                     // TODO mw: Get initial Roles from configuration.
                     var registeredUser = RegisteredUser.apply(userId, displayName, Collections.emptyList());
 
-                    return repository.updateOrInsertRegisteredUser(registeredUser);
+                    return repository.insertOrUpdateRegisteredUser(registeredUser);
                 }
             });
     }

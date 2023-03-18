@@ -1,15 +1,13 @@
 package com.wellnr.platform.core.modules.users.values.users;
 
-import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.guid.GUID;
-import com.wellnr.platform.core.modules.users.UsersModule;
 import com.wellnr.platform.core.modules.users.values.rbac.RoleAssignment;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
-import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * An anonymous user is a user whose authentication has not been completed yet.
@@ -25,12 +23,7 @@ public class AnonymousUser implements User {
     GUID guid;
 
     public static AnonymousUser apply(Collection<RoleAssignment> roles) {
-        var guid = GUID.fromString(MessageFormat.format(
-            "{0}/anonymous-user/{1}",
-            UsersModule.GUID_PREFIX, Operators.randomHash()
-        ));
-
-        return new AnonymousUser(Set.copyOf(roles), guid);
+        return new AnonymousUser(Set.copyOf(roles), UserGUID.apply());
     }
 
     @Override

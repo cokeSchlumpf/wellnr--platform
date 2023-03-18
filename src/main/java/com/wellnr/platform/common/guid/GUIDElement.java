@@ -28,7 +28,7 @@ public class GUIDElement {
     Map<String, String> attributes;
 
     static {
-        var patternRegEx = "^([a-z0-9A-Z-]*)(\\[([a-zA-Z0-9-=,']+)\\])?$";
+        var patternRegEx = "^([a-z0-9A-Z-]*)(\\[([a-zA-Z0-9-=,'_]+)\\])?$";
         pattern = Pattern.compile(patternRegEx);
     }
 
@@ -36,7 +36,7 @@ public class GUIDElement {
         /*
          * Validate parameters.
          */
-        if (!name.matches("[a-z][a-z0-9-]*")) {
+        if (!name.matches("[a-z0-9-]+")) {
             throw new IllegalArgumentException(MessageFormat.format(
                 "`{0}` is not a valid value for `name`. `name` must adhere regular expression `[a-z][a-z0-9-]*`",
                 name
@@ -44,18 +44,18 @@ public class GUIDElement {
         }
 
         attributes.forEach((key, value) -> {
-            if (!key.matches("[a-z][a-z0-9-]*")) {
+            if (!key.matches("[a-z][a-z0-9-_]*")) {
                 throw new IllegalArgumentException(MessageFormat.format(
                     "`{0}` is no valid attribute name, attribute names must adhere regular expression " +
-                        "`[a-z][a-z0-9-]*`",
+                        "`[a-z][a-z0-9-_]*`",
                     key
                 ));
             }
 
-            if (!value.matches("[a-zA-Z0-9-]*")) {
+            if (!value.matches("[a-zA-Z0-9-_]*")) {
                 throw new IllegalArgumentException(MessageFormat.format(
                     "`{0}` is no valid attribute value, attribute values must adhere regular expression " +
-                        "`[a-zA-Z0-9-]*`",
+                        "`[a-zA-Z0-9-_]*`",
                     key
                 ));
             }
