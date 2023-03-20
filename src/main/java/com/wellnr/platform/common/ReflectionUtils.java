@@ -31,15 +31,23 @@ public final class ReflectionUtils {
      */
     @SuppressWarnings("unchecked")
     public static <T> T createProxy(Class<T> type, MethodHandler mh) {
-        var factory = new ProxyFactory();
-        factory.setSuperclass(type);
+        if (type.isInterface()) {
+            return (T) java.lang.reflect.Proxy.newProxyInstance(
+                type.getClassLoader(),
+                new Class<?>[] { type },
+                (proxy, method, args) -> mh.invoke(proxy, method, null, args)
+            );
+        } else {
+            var factory = new ProxyFactory();
+            factory.setSuperclass(type);
 
-        var proxyClass = factory.createClass();
-        var objenesis = new ObjenesisStd();
-        var proxy = objenesis.newInstance(proxyClass);
+            var proxyClass = factory.createClass();
+            var objenesis = new ObjenesisStd();
+            var proxy = objenesis.newInstance(proxyClass);
 
-        ((Proxy) proxy).setHandler(mh);
-        return (T) proxy;
+            ((Proxy) proxy).setHandler(mh);
+            return (T) proxy;
+        }
     }
 
     /**

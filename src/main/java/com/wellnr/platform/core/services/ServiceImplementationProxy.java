@@ -1,20 +1,24 @@
 package com.wellnr.platform.core.services;
 
 import com.google.common.collect.Lists;
+import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.ReflectionUtils;
+import com.wellnr.platform.common.tuples.Tuple;
 import com.wellnr.platform.common.tuples.Tuple2;
 import com.wellnr.platform.common.validation.ParameterName;
 import com.wellnr.platform.core.context.PlatformContext;
-import com.wellnr.platform.core.context.RootEntity;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 public class ServiceImplementationProxy {
@@ -23,7 +27,7 @@ public class ServiceImplementationProxy {
 
     }
 
-    public static <T> T createService(Class<T> serviceInterface, @Nullable T delegate) {
+    public static <T> T createService(PlatformContext context, Class<T> serviceInterface, @Nullable T delegate) {
         /*
          * Validate class.
          */
@@ -37,16 +41,55 @@ public class ServiceImplementationProxy {
         /*
          * Generate method implementations.
          */
-        var methodsToGenerate = ReflectionUtils.getMethods(serviceInterface, GeneratedImpl.class, null, null);
+        var generatedMethods = ReflectionUtils
+            .getMethods(serviceInterface, GeneratedImpl.class, null, null)
+            .stream()
+            .map(method -> Tuple.apply(method, createImplementation(context, serviceInterface, method)))
+            .collect(Collectors.toMap(
+                t -> getMethodIdentifier(t._1),
+                Tuple2::get_2
+            ));
 
-        return null;
+
+        return ReflectionUtils.createProxy(
+            serviceInterface, (proxy, method, args) -> {
+                var identifier = getMethodIdentifier(method);
+
+                if (generatedMethods.containsKey(identifier)) {
+                    return generatedMethods.get(identifier).invoke(proxy, method, args);
+                } else if (Objects.nonNull(delegate)) {
+                    return method.invoke(delegate, args);
+                } else if (method.isDefault()) {
+                    return InvocationHandler.invokeDefault(proxy, method, args);
+                } else {
+                    throw new IllegalArgumentException(MessageFormat.format(
+                        "Method `{0}#{1}` has not been generated, no delegate is available and its not a default implementation",
+                        serviceInterface.getName(), method.getName()
+                    ));
+                }
+            }
+        );
     }
 
+    private static String getMethodIdentifier(Method m) {
+        return String.format(
+            "%s(%s)",
+            m.getName(),
+            Arrays
+                .stream(m.getParameters())
+                .map(Parameter::getType)
+                .map(Class::getName)
+                .collect(Collectors.joining(", "))
+        );
+    }
+
+    @SuppressWarnings({"unchecked", "SuspiciousInvocationHandlerImplementation"})
     private static InvocationHandler createImplementation(
         PlatformContext context,
         Class<?> serviceInterface,
-        Method serviceMethod,
-        List<Class<RootEntity>> entityTypes) {
+        Method serviceMethod
+    ) {
+
         /*
          * Find method of entities to which the call should be delegated.
          */
@@ -187,9 +230,73 @@ public class ServiceImplementationProxy {
 
             var matchingLookupMethod = matchingLookupMethods.get(0);
 
-            return (proxy, m, args) -> {
-                return null;
-            };
+            if (matchingLookupMethod.get_1().getReturnType().isAssignableFrom(CompletionStage.class)) {
+                return (proxy, m, args) -> {
+                    var lookupEntityInstance = context.getOrCreateEntity(lookupEntity);
+
+                    var lookupArgs = matchingLookupMethod
+                        .get_2()
+                        .stream()
+                        .map(lookup_parameter_index -> args[lookup_parameter_index])
+                        .toArray();
+
+                    var delegateInstanceCS = ((CompletionStage<?>) matchingLookupMethod
+                        .get_1()
+                        .invoke(lookupEntityInstance, lookupArgs)
+                    );
+
+                    return delegateInstanceCS.thenCompose(delegateInstance -> {
+                        if (delegateInstance.getClass().isAssignableFrom(generatedImpl.delegate())) {
+                            var delegateParams = delegateMethod
+                                .get_2()
+                                .stream()
+                                .map(service_parameters_index -> args[service_parameters_index])
+                                .toArray();
+
+                            var result = Operators.suppressExceptions(
+                                () -> delegateMethod.get_1().invoke(delegateInstance, delegateParams)
+                            );
+
+                            if (result instanceof CompletionStage<?> cs) {
+                                return (CompletionStage<Object>) cs;
+                            } else {
+                                return CompletableFuture.completedFuture(result);
+                            }
+                        } else {
+                            throw new IllegalArgumentException(MessageFormat.format(
+                                "Response type of `{0}#{1}` is not `{2}`",
+                                lookupEntity,
+                                matchingLookupMethod.get_1().getName(),
+                                generatedImpl.delegate().getName()
+                            ));
+                        }
+                    });
+                };
+            } else {
+                return (proxy, m, args) -> {
+                    var lookupEntityInstance = context.getOrCreateEntity(lookupEntity);
+
+                    var lookupArgs = matchingLookupMethod
+                        .get_2()
+                        .stream()
+                        .map(lookup_parameter_index -> args[lookup_parameter_index])
+                        .toArray();
+
+                    var delegateInstance = matchingLookupMethod
+                        .get_1()
+                        .invoke(lookupEntityInstance, lookupArgs);
+
+                    var delegateParams = delegateMethod
+                        .get_2()
+                        .stream()
+                        .map(service_parameters_index -> args[service_parameters_index])
+                        .toArray();
+
+                    return Operators.suppressExceptions(
+                        () -> delegateMethod.get_1().invoke(delegateInstance, delegateParams)
+                    );
+                };
+            }
         } else {
             /*
              * Method does not require a lookup.
