@@ -3,19 +3,55 @@ package com.wellnr.platform.common;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.tuples.Tuple;
 import com.wellnr.platform.common.tuples.Tuple2;
+import javassist.util.proxy.MethodHandler;
+import javassist.util.proxy.Proxy;
+import javassist.util.proxy.ProxyFactory;
+import org.objenesis.ObjenesisStd;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public final class ReflectionUtils {
 
     private ReflectionUtils() {
 
+    }
+
+    /**
+     * Creates a proxy class for the provided type.
+     *
+     * @param type The type to proxy.
+     * @param mh   The method handler to handle method calls.
+     * @param <T>  The type to be proxy.
+     * @return The proxy instance.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T createProxy(Class<T> type, MethodHandler mh) {
+        var factory = new ProxyFactory();
+        factory.setSuperclass(type);
+
+        var proxyClass = factory.createClass();
+        var objenesis = new ObjenesisStd();
+        var proxy = objenesis.newInstance(proxyClass);
+
+        ((Proxy) proxy).setHandler(mh);
+        return (T) proxy;
+    }
+
+    /**
+     * Creates a proxy class for the provided type.
+     *
+     * @param type The type to proxy.
+     * @param ih   The method handler to handle method calls.
+     * @param <T>  The type to proxy.
+     * @return The proxy instance.
+     */
+    public static <T> T createProxy(Class<T> type, InvocationHandler ih) {
+        return createProxy(type, (self, thisMethod, proceed, args) -> ih.invoke(self, thisMethod, args));
     }
 
     /**
@@ -28,6 +64,26 @@ public final class ReflectionUtils {
      * @return A method matching the criteria if found.
      */
     public static Optional<Method> getMethod(
+        Class<?> type,
+        @Nullable Class<? extends Annotation> annotation,
+        @Nullable Class<?> expectedReturnType,
+        @Nullable Function1<Method, Boolean> additionalCheck) {
+
+        return getMethods(type, annotation, expectedReturnType, additionalCheck)
+            .stream()
+            .findFirst();
+    }
+
+    /**
+     * Find a method by given criteria.
+     *
+     * @param type               The type to analyse.
+     * @param annotation         Optional. An annotation class with which the method should be annotated.
+     * @param expectedReturnType Optional. The expected return type of the method.
+     * @param additionalCheck    Optional. An additional filter operation to select a method.
+     * @return A method matching the criteria if found.
+     */
+    public static List<Method> getMethods(
         Class<?> type,
         @Nullable Class<? extends Annotation> annotation,
         @Nullable Class<?> expectedReturnType,
@@ -56,7 +112,7 @@ public final class ReflectionUtils {
                     return true;
                 }
             })
-            .findFirst();
+            .toList();
     }
 
     /**

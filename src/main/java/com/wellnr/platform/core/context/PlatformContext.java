@@ -7,6 +7,7 @@ import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.common.tuples.Tuple2;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
+import com.wellnr.platform.core.modules.users.entities.RegisteredUserRootEntity;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -111,6 +112,10 @@ public interface PlatformContext {
      */
     <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid, Function1<GUID, T> createInstance);
 
+    default <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, GUID guid) {
+        return getOrCreateEntity(entityType, guid, id -> createFromContext(entityType, id));
+    }
+
     /**
      * Get or create a singleton entity instance.
      * <p>
@@ -122,6 +127,19 @@ public interface PlatformContext {
      * @return The singleton entity instance.
      */
     <T extends RootEntity> T getOrCreateEntity(Class<T> entityType, Function0<T> createInstance);
+
+    /**
+     * Get or create a singleton entity instance.
+     * <p>
+     * Use this variant for entity types which should only exist exactly once within the system.
+     *
+     * @param entityType     The type of the entity.
+     * @param <T>            The type of the entity.
+     * @return The singleton entity instance.
+     */
+    default <T extends RootEntity> T getOrCreateEntity(Class<T> entityType) {
+        return getOrCreateEntity(entityType, () -> createFromContext(entityType));
+    }
 
     /**
      * Get all available roles which have been registered in the platform instance.

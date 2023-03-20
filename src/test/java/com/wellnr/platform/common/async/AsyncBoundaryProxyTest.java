@@ -16,7 +16,7 @@ class AsyncBoundaryProxyTest {
     @Test
     public void test() throws ExecutionException, InterruptedException {
         var orig = TestClass.apply();
-        var test = AsyncBoundaryProxy.<ITestClass>createProxy(orig);
+        var test = AsyncBoundaryProxy.createProxy(orig);
 
         test.add(1);
 
@@ -79,9 +79,9 @@ class AsyncBoundaryProxyTest {
      */
 
     @AllArgsConstructor(staticName = "apply")
-    public static final class TestClass implements ITestClass {
+    public static class TestClass {
 
-        int value;
+        Integer value;
 
         ExecutorService executors;
 
@@ -91,7 +91,7 @@ class AsyncBoundaryProxyTest {
             return apply(0, Executors.newFixedThreadPool(42), new Random());
         }
 
-        @Override
+        @AsyncMethod(pure = false)
         public CompletionStage<Done> addAsync(int number) {
             return CompletableFuture.supplyAsync(() -> {
                 System.out.println("Adding " + number);
@@ -103,7 +103,7 @@ class AsyncBoundaryProxyTest {
             }, executors);
         }
 
-        @Override
+        @AsyncMethod(pure = false)
         public CompletionStage<Done> subAsync(int number) {
             return CompletableFuture.supplyAsync(() -> {
                 System.out.println("Subtracting " + number);
@@ -115,7 +115,7 @@ class AsyncBoundaryProxyTest {
             }, executors);
         }
 
-        @Override
+        @AsyncMethod(pure = true)
         public CompletionStage<Done> failCS() {
             return CompletableFuture.supplyAsync(() -> {
                 Operators.suppressExceptions(() -> Thread.sleep(1000 + random.nextInt(2000)));
@@ -123,30 +123,30 @@ class AsyncBoundaryProxyTest {
             });
         }
 
-        @Override
+        @AsyncMethod(pure = false)
         public CompletionStage<Done> failAsync() {
             throw new RuntimeException("Some exception");
         }
 
-        @Override
+        @AsyncMethod(pure = true)
         public Done add(int number) {
             System.out.println("Adding " + number);
             this.value = this.value + number;
             return Done.getInstance();
         }
 
-        @Override
+        @AsyncMethod(pure = false)
         public void sub(int number) {
             System.out.println("Subtracting " + number);
             this.value = this.value - number;
         }
 
-        @Override
+        @AsyncMethod(pure = true)
         public int getValue() {
             return value;
         }
 
-        @Override
+        @AsyncMethod(pure = true)
         public void fail() {
             throw new RuntimeException("Some exception");
         }

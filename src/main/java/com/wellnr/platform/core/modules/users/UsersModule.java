@@ -1,6 +1,7 @@
 package com.wellnr.platform.core.modules.users;
 
 import com.wellnr.platform.common.Operators;
+import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.config.RepositoryMode;
 import com.wellnr.platform.core.context.PlatformContext;
 import com.wellnr.platform.core.modules.PlatformModule;
@@ -9,8 +10,8 @@ import com.wellnr.platform.core.modules.users.auth.AuthenticationHandler;
 import com.wellnr.platform.core.modules.users.auth.ChainedAuthenticationHandler;
 import com.wellnr.platform.core.modules.users.auth.UserTokenAuthenticationHandler;
 import com.wellnr.platform.core.modules.users.configuration.UsersConfiguration;
+import com.wellnr.platform.core.modules.users.entities.RegisteredUserRootEntity;
 import com.wellnr.platform.core.modules.users.entities.RegisteredUsersRootEntity;
-import com.wellnr.platform.core.modules.users.entities.RegisteredUsersRootEntityImpl;
 import com.wellnr.platform.core.modules.users.ports.RegisteredUsersRepositoryPort;
 import com.wellnr.platform.core.modules.users.values.resources.AboutResource;
 import com.wellnr.platform.core.modules.users.values.users.RegisteredUser;
@@ -91,8 +92,11 @@ public class UsersModule implements PlatformModule {
     }
 
     public RegisteredUsersRootEntity getRegisteredUsers() {
-        return context.getOrCreateEntity(
-            RegisteredUsersRootEntity.class,
-            () -> context.createFromContext(RegisteredUsersRootEntityImpl.class));
+        return context.getOrCreateEntity(RegisteredUsersRootEntity.class);
     }
+
+    public RegisteredUserRootEntity getRegisteredUser(GUID guid) {
+        return context.getOrCreateEntity(RegisteredUserRootEntity.class, guid);
+    }
+
 }

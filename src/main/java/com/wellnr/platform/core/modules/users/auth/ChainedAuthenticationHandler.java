@@ -17,7 +17,7 @@ import java.util.List;
  * anymore.
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ChainedAuthenticationHandler implements AuthenticationHandler {
+public final class ChainedAuthenticationHandler implements AuthenticationHandler {
 
     /**
      * List of authentication handlers to use. The handlers will be called

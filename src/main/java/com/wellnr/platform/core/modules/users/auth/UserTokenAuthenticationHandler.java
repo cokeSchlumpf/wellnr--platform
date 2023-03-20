@@ -13,7 +13,7 @@ import java.util.List;
  * other programmatic accesses where authentication via browser is not possible.
  */
 @AllArgsConstructor(staticName = "apply")
-public class UserTokenAuthenticationHandler implements AuthenticationHandler {
+public final class UserTokenAuthenticationHandler implements AuthenticationHandler {
 
     @Override
     public User handleAuthentication(Context ctx) {

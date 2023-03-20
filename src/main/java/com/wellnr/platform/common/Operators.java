@@ -28,6 +28,10 @@ public final class Operators {
 
     }
 
+    public static <T> T pass() {
+        return (T) null;
+    }
+
     public static <T> CompletableFuture<T> completed(T value) {
         return CompletableFuture.completedFuture(value);
     }

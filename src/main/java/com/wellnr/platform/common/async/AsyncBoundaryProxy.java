@@ -1,9 +1,12 @@
 package com.wellnr.platform.common.async;
 
 import com.wellnr.platform.common.Operators;
+import com.wellnr.platform.common.ReflectionUtils;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.tuples.Done;
 import com.wellnr.platform.common.tuples.Either;
+import javassist.util.proxy.MethodFilter;
+import javassist.util.proxy.ProxyFactory;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -44,15 +47,14 @@ public final class AsyncBoundaryProxy implements InvocationHandler {
 
     @SuppressWarnings("unchecked")
     public static <T> T createProxy(T delegate, Class<T> interfaceType) {
-        return (T) Proxy.newProxyInstance(
-            interfaceType.getClassLoader(),
-            new Class[]{interfaceType},
-            AsyncBoundaryProxy.apply(delegate));
+        return ReflectionUtils.createProxy(
+            interfaceType, AsyncBoundaryProxy.apply(delegate)
+        );
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T createProxy(T delegate) {
-        return createProxy(delegate, (Class<T>) delegate.getClass().getInterfaces()[0]);
+        return createProxy(delegate, (Class<T>) delegate.getClass());
     }
 
     @Override
