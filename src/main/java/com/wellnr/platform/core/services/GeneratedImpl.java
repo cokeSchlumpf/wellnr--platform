@@ -26,6 +26,11 @@ public @interface GeneratedImpl {
      */
     Class<? extends RootEntity>[] lookup() default {};
 
+    /**
+     * The permissions a user should have to execute the action.
+     *
+     * @return A list of permissions.
+     */
     String[] permissions() default {};
 
 }

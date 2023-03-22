@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 
@@ -24,6 +25,10 @@ public class AnonymousUser implements User {
 
     public static AnonymousUser apply(Collection<RoleAssignment> roles) {
         return new AnonymousUser(Set.copyOf(roles), UserGUID.apply());
+    }
+
+    public static AnonymousUser apply(RoleAssignment ...roles) {
+        return apply(Arrays.stream(roles).toList());
     }
 
     @Override

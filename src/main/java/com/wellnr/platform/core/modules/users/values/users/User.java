@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.wellnr.platform.common.guid.GUID;
-import com.wellnr.platform.core.modules.users.values.rbac.Permission;
 import com.wellnr.platform.core.modules.users.values.rbac.RoleAssignment;
 
 import java.util.Set;
@@ -38,13 +37,17 @@ public sealed interface User permits AnonymousUser, AuthenticatedUser, Registere
      * @param permission The permission which is required.
      * @return True or false.
      */
-    default boolean hasPermission(GUID subject, Permission permission) {
+    default boolean hasPermission(GUID subject, String permission) {
         return this
             .getRoles()
             .stream()
-            .filter(role -> role.getSubject().equals(subject))
+            .filter(role -> subject.matchesOrIsParent(role.getSubject()))
             .flatMap(role -> role.getRole().getPermissions().stream())
             .anyMatch(permission::equals);
+    }
+
+    default String getDisplayName() {
+        return "User Dings";
     }
 
 }

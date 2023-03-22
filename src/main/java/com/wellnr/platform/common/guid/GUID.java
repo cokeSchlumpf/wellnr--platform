@@ -55,18 +55,56 @@ public class GUID {
 
     List<GUIDElement> elements;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param elements The elements defining this GUID.
+     * @return A new instance.
+     */
     public static GUID apply(Collection<GUIDElement> elements) {
         return new GUID(List.copyOf(elements));
     }
 
+    /**
+     * Creates a new instance.
+     *
+     * @param elements The elements defining this GUID.
+     * @return A new instance.
+     */
     public static GUID apply(GUIDElement... elements) {
         return apply(Arrays.stream(elements).toList());
     }
 
+    /**
+     * Alternative factory, excepts also a single string containing the string representation of a GUID.
+     *
+     * @param elements List of elements or single element which is the string representation of GUID.
+     * @return A new instance.
+     */
     public static GUID apply(String... elements) {
-        return apply(Arrays.stream(elements).map(GUIDElement::fromString).toList());
+        if (elements.length == 1 && elements[0].contains("/")) {
+            return GUID.fromString(elements[0]);
+        } else {
+            return apply(Arrays.stream(elements).map(GUIDElement::fromString).toList());
+        }
     }
 
+    /**
+     * Returns true if `other` equals this GUID or is a parent of this GUID.
+     *
+     * @param other The other GUID which is equal or a potential parent.
+     * @return True/ false
+     */
+    public boolean matchesOrIsParent(GUID other) {
+        return this.toString().startsWith(other.toString());
+    }
+
+    /**
+     * Creates a new instance from GUID's string representation.
+     *
+     * @param guid The GUID as string.
+     * @return A new instance.
+     */
     public static GUID fromString(String guid) {
         var elements = Arrays
             .stream(guid.split("/"))
@@ -77,6 +115,11 @@ public class GUID {
         return apply(elements);
     }
 
+    /**
+     * Creates the string representation of GUID.
+     *
+     * @return The string representation.
+     */
     @Override
     public String toString() {
         var elements = this.elements

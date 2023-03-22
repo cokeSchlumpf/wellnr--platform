@@ -5,9 +5,7 @@ import com.wellnr.platform.common.functions.Function0;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.common.tuples.Tuple2;
-import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
-import com.wellnr.platform.core.modules.users.entities.RegisteredUserRootEntity;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -75,13 +73,6 @@ public interface PlatformContext {
     default <T extends PlatformModule> PlatformContext withModule(T module) {
         return this.withModule(module, (Class<T>) module.getClass());
     }
-
-    /**
-     * Returns a set of all registered commands of the application.
-     *
-     * @return The set of commands.
-     */
-    Set<Class<Command>> getCommands();
 
     /**
      * Get a registered module after context has been initialized.

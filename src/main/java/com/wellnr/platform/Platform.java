@@ -1,5 +1,6 @@
 package com.wellnr.platform;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.wellnr.platform.common.Templates;
 import com.wellnr.platform.common.databind.DefaultObjectMapperFactory;
@@ -64,11 +65,9 @@ public class Platform {
         this
             .context
             .getInstance(Javalin.class)
-            .updateConfig(cfg -> {
-                cfg.jsonMapper(new JavalinJackson(
-                    this.context.getInstance(ObjectMapperFactory.class).createJsonMapper(true)
-                ));
-            })
+            .updateConfig(cfg -> cfg.jsonMapper(
+                new JavalinJackson(this.context.getInstance(ObjectMapper.class))
+            ))
             .start(config.getHost(), config.getPort());
 
         Runtime

@@ -9,7 +9,6 @@ import com.wellnr.platform.common.guid.GUID;
 import com.wellnr.platform.core.commands.Command;
 import com.wellnr.platform.core.modules.PlatformModule;
 import com.wellnr.platform.core.modules.users.values.rbac.Role;
-import com.wellnr.platform.core.persistence.Operations;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -30,7 +29,7 @@ final class InitializedPlatformContext implements PlatformContextInternal {
 
     private final Map<Class<? extends PlatformModule>, PlatformModule> modules;
 
-    private final Set<Class<Command>> commands;
+    private final Map<String, Class<Command>> commands;
 
     private final Set<Role> roles;
 
@@ -38,11 +37,11 @@ final class InitializedPlatformContext implements PlatformContextInternal {
 
     public static InitializedPlatformContext apply(
         Map<Class<?>, Object> values, Map<Class<? extends PlatformModule>, PlatformModule> modules,
-        Set<Class<Command>> commands, Set<Role> roles
+        Map<String, Class<Command>> commands, Set<Role> roles
     ) {
 
         return new InitializedPlatformContext(
-            Map.copyOf(values), Map.copyOf(modules), Set.copyOf(commands), Set.copyOf(roles), Maps.newHashMap()
+            Map.copyOf(values), Map.copyOf(modules), Map.copyOf(commands), Set.copyOf(roles), Maps.newHashMap()
         );
     }
 
@@ -89,8 +88,7 @@ final class InitializedPlatformContext implements PlatformContextInternal {
         throw new IllegalStateException("`withValue` must not be called after initialization.");
     }
 
-    @Override
-    public Set<Class<Command>> getCommands() {
+    public Map<String, Class<Command>> getCommands() {
         return commands;
     }
 

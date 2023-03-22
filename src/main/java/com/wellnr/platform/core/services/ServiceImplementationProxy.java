@@ -3,10 +3,14 @@ package com.wellnr.platform.core.services;
 import com.google.common.collect.Lists;
 import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.ReflectionUtils;
+import com.wellnr.platform.common.exceptions.NotAuthorizedException;
 import com.wellnr.platform.common.tuples.Tuple;
 import com.wellnr.platform.common.tuples.Tuple2;
 import com.wellnr.platform.common.validation.ParameterName;
+import com.wellnr.platform.common.validation.ValidationProxy;
 import com.wellnr.platform.core.context.PlatformContext;
+import com.wellnr.platform.core.context.RootEntity;
+import com.wellnr.platform.core.modules.users.values.users.User;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationHandler;
@@ -27,7 +31,35 @@ public class ServiceImplementationProxy {
 
     }
 
+    /**
+     * Creates a service instance with auto-generated implementations and validations.
+     *
+     * @param context          The platform context instance.
+     * @param serviceInterface The interface to implement.
+     * @param <T>              The type of the service.
+     * @return The service instance.
+     */
+    public static <T> T createService(PlatformContext context, Class<T> serviceInterface) {
+        return createService(context, serviceInterface, null);
+    }
+
+    /**
+     * Creates a service instance with auto-generated implementations and validations.
+     *
+     * @param context          The platform context instance.
+     * @param serviceInterface The interface to implement.
+     * @param delegate         An optional delegate if the service contains complex functions which should not be
+     *                         auto-generated.
+     * @param <T>              The type of the service.
+     * @return The service instance.
+     */
     public static <T> T createService(PlatformContext context, Class<T> serviceInterface, @Nullable T delegate) {
+        var impl = createServiceImplementation(context, serviceInterface, delegate);
+        return ValidationProxy.createProxy(impl, serviceInterface);
+    }
+
+    private static <T> T createServiceImplementation(PlatformContext context, Class<T> serviceInterface,
+                                                     @Nullable T delegate) {
         /*
          * Validate class.
          */
@@ -63,7 +95,8 @@ public class ServiceImplementationProxy {
                     return InvocationHandler.invokeDefault(proxy, method, args);
                 } else {
                     throw new IllegalArgumentException(MessageFormat.format(
-                        "Method `{0}#{1}` has not been generated, no delegate is available and its not a default implementation",
+                        "Method `{0}#{1}` has not been generated, no delegate is available and its not a default " +
+                            "implementation",
                         serviceInterface.getName(), method.getName()
                     ));
                 }
@@ -89,6 +122,16 @@ public class ServiceImplementationProxy {
         Class<?> serviceInterface,
         Method serviceMethod
     ) {
+        /*
+         * Check method constraints.
+         */
+        if (!(serviceMethod.getParameterCount() > 0 && serviceMethod.getParameters()[0].getType().equals(User.class))) {
+            throw new IllegalArgumentException(MessageFormat.format(
+                "Service method `{0}#{1}` is not valid. Every service method must have `User executor` as first " +
+                    "parameter.",
+                serviceInterface.getName(), serviceMethod.getName()
+            ));
+        }
 
         /*
          * Find method of entities to which the call should be delegated.
@@ -247,6 +290,13 @@ public class ServiceImplementationProxy {
 
                     return delegateInstanceCS.thenCompose(delegateInstance -> {
                         if (delegateInstance.getClass().isAssignableFrom(generatedImpl.delegate())) {
+
+                            checkPermission(
+                                (User) args[0],
+                                generatedImpl.permissions(),
+                                (RootEntity) delegateInstance
+                            );
+
                             var delegateParams = delegateMethod
                                 .get_2()
                                 .stream()
@@ -282,7 +332,7 @@ public class ServiceImplementationProxy {
                         .map(lookup_parameter_index -> args[lookup_parameter_index])
                         .toArray();
 
-                    var delegateInstance = matchingLookupMethod
+                    var delegateInstance = (RootEntity) matchingLookupMethod
                         .get_1()
                         .invoke(lookupEntityInstance, lookupArgs);
 
@@ -291,6 +341,12 @@ public class ServiceImplementationProxy {
                         .stream()
                         .map(service_parameters_index -> args[service_parameters_index])
                         .toArray();
+
+                    checkPermission(
+                        (User) args[0],
+                        generatedImpl.permissions(),
+                        delegateInstance
+                    );
 
                     return Operators.suppressExceptions(
                         () -> delegateMethod.get_1().invoke(delegateInstance, delegateParams)
@@ -311,8 +367,33 @@ public class ServiceImplementationProxy {
 
                 var delegateInstance = context.getOrCreateEntity(generatedImpl.delegate());
 
+                checkPermission(
+                    (User) args[0],
+                    generatedImpl.permissions(),
+                    delegateInstance);
+
                 return delegateMethod.get_1().invoke(delegateInstance, delegateParams);
             };
+        }
+    }
+
+    /**
+     * Checks whether the user has at least on of the permissions on one of the entities.
+     *
+     * @param permissions The list of permissions to check.
+     * @param entity      The entity which is accessed (delegate) on which the access should be checked.
+     */
+    private static void checkPermission(User user, String[] permissions, RootEntity entity) {
+        if (permissions.length > 0) {
+            var allowed = Arrays
+                .stream(permissions)
+                .anyMatch(permission -> user.hasPermission(entity.getGUID(), permission));
+
+            if (!allowed) {
+                throw NotAuthorizedException.apply(
+                    "You are not authorized to execute this action."
+                );
+            }
         }
     }
 

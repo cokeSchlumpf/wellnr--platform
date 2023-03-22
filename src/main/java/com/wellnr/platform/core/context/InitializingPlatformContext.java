@@ -43,11 +43,6 @@ final class InitializingPlatformContext implements PlatformContextInternal {
     }
 
     @Override
-    public Set<Class<Command>> getCommands() {
-        throw new IllegalStateException("`getCommands` must not be called during system initialization.");
-    }
-
-    @Override
     public <T extends PlatformModule> T getModule(Class<T> clazz) {
         throw new IllegalStateException("`getModule` must not be called during system initialization.");
     }

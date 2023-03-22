@@ -10,6 +10,7 @@ import java.util.concurrent.CompletionStage;
 
 import static com.wellnr.platform.common.Operators.completed;
 
+
 public class GetUserProfileCommand implements Command {
 
     @Override

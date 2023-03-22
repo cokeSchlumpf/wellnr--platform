@@ -1,8 +1,12 @@
 package com.wellnr.platform.core.context;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.wellnr.platform.common.Operators;
 import com.wellnr.platform.common.ReflectionUtils;
+import com.wellnr.platform.common.databind.ObjectMapperFactory;
 import com.wellnr.platform.common.functions.Function0;
 import com.wellnr.platform.common.functions.Function1;
 import com.wellnr.platform.common.guid.GUID;
@@ -85,8 +89,16 @@ final class PlatformContextImpl implements PlatformContext {
     @Override
     public synchronized void initialize() {
         if (delegate instanceof InitializingPlatformContext init) {
-            var commands = Sets.<Class<Command>>newHashSet();
+            var commands = Maps.<String, Class<Command>>newHashMap();
             var roles = Sets.<Role>newHashSet();
+
+            /*
+             * Instantiate object mapper.
+             */
+            var omf = this.delegate.getInstance(ObjectMapperFactory.class);
+            this.delegate.withSingletonInstance(
+                omf.createJsonMapper(true), ObjectMapper.class
+            );
 
             /*
              * Initialize all modules.
@@ -101,11 +113,19 @@ final class PlatformContextImpl implements PlatformContext {
             for (var module : modulesOrdered) {
                 LOG.info("Initializing module `{}` ...", module.getName());
 
-                commands.addAll(module.getCommands().values());
+                commands.putAll(module.getCommands());
                 roles.addAll(module.getRoles());
 
                 module.init();
             }
+
+            /*
+             * Register commands.
+             */
+            commands.forEach((cmd, command) -> {
+                var type = new NamedType(command, cmd);
+                delegate.getInstance(ObjectMapper.class).registerSubtypes(type);
+            });
 
             this.delegate = InitializedPlatformContext.apply(
                 init.instances, init.modules, commands, roles
@@ -131,11 +151,6 @@ final class PlatformContextImpl implements PlatformContext {
     public <T extends PlatformModule> PlatformContext withModule(T module, Class<T> clazz) {
         delegate.withModule(module, clazz);
         return this;
-    }
-
-    @Override
-    public Set<Class<Command>> getCommands() {
-        return delegate.getCommands();
     }
 
     @Override
